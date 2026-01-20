@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>STAR 1 Shift Trade Portal</title>
+  <link rel="stylesheet" href="style.css" />
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyB3EuJcuoyCAc43Xvuv8G7M4o8_BgLeeTQ",
+      authDomain: "star1-schedule.firebaseapp.com",
+      databaseURL: "https://star1-schedule-default-rtdb.firebaseio.com",
+      projectId: "star1-schedule",
+      storageBucket: "star1-schedule.firebasestorage.app",
+      messagingSenderId: "892421370116",
+      appId: "1:892421370116:web:30b705b567fc02b82fe051"
+    };
+    firebase.initializeApp(firebaseConfig);
+  </script>
+</head>
+<body>
+  <div class="container">
+    <header class="app-header">
+      <h1>STAR 1 Shift Trade Portal</h1>
+      <p>Phase 1: Request Trades (Read-Only Schedule)</p>
+    </header>
+
+    <section class="staff-selection">
+      <label for="staffSelect">Select Your Name</label>
+      <select id="staffSelect">
+        <option value="">Choose your name...</option>
+        <optgroup label="Paramedics">
+          <option value="Greg Barton">Greg Barton</option>
+          <option value="Scott McTaggart">Scott McTaggart</option>
+          <option value="Dave Allison">Dave Allison</option>
+          <option value="Mackenzie Wardle">Mackenzie Wardle</option>
+          <option value="Chad Hegge">Chad Hegge</option>
+          <option value="Ken King">Ken King</option>
+          <option value="John Doyle">John Doyle</option>
+          <option value="Bob Odney">Bob Odney</option>
+        </optgroup>
+        <optgroup label="Nurses">
+          <option value="Graham Newton">Graham Newton</option>
+          <option value="Stuart Grant">Stuart Grant</option>
+          <option value="Kellie Ann Vogelaar">Kellie Ann Vogelaar</option>
+          <option value="Michelle Sexsmith">Michelle Sexsmith</option>
+          <option value="Carolyn Hogan">Carolyn Hogan</option>
+          <option value="Kris Austin">Kris Austin</option>
+          <option value="Flo Butler">Flo Butler</option>
+          <option value="Jodi Scott">Jodi Scott</option>
+          <option value="Janice Kirkham">Janice Kirkham</option>
+        </optgroup>
+      </select>
+    </section>
+
+    <section id="shiftsSection" style="display:none;">
+      <h2 id="shiftsTitle"></h2>
+      <div id="shiftsList" class="shifts-list"></div>
+    </section>
+
+    <section id="tradeRequestsSection" style="display:none; margin-top: 20px;">
+      <h2>My Trade Requests</h2>
+      <div id="tradeRequestsList" class="trades-list"></div>
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
