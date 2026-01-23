@@ -7,1382 +7,698 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-        }
-
-        #loginContainer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-            z-index: 100;
-        }
-
-        #loginContainer::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.4);
-            z-index: 1;
-        }
-
-        .login-card {
-            background: white;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 400px;
-            z-index: 2;
-            position: relative;
-        }
-
-        .login-card h1 {
-            color: #2d8a8c;
-            margin-bottom: 30px;
-            text-align: center;
-            font-size: 28px;
-        }
-
-        .login-card .form-group {
-            margin-bottom: 20px;
-        }
-
-        .login-card label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .login-card select,
-        .login-card input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .login-card button {
-            width: 100%;
-            padding: 12px;
-            background-color: #2d8a8c;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-
-        .login-card button:hover {
-            background-color: #1f5f61;
-        }
-
-        #mainContent {
-            display: none;
-            padding: 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            background-color: #2d8a8c;
-            color: white;
-            padding: 20px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .header h1 {
-            font-size: 24px;
-        }
-
-        .logout-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .logout-btn:hover {
-            background-color: #c82333;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            border-bottom: 2px solid #ddd;
-        }
-
-        .tabs button {
-            padding: 12px 20px;
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            color: #666;
-            border-bottom: 3px solid transparent;
-            transition: all 0.3s;
-        }
-
-        .tabs button:hover {
-            color: #2d8a8c;
-        }
-
-        .section {
-            display: none;
-        }
-
-        .shift-card {
-            background-color: white;
-            padding: 15px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .shift-card h3 {
-            color: #2d8a8c;
-            margin-bottom: 10px;
-        }
-
-        #rosterCalendar {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            background-color: #ddd;
-            margin-top: 20px;
-        }
-
-        #rosterCalendar > div {
-            background-color: white;
-            padding: 10px;
-            min-height: 120px;
-        }
-
-        .card {
-            background-color: white;
-            padding: 15px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; color: #333; }
+        #loginContainer { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; background-size: cover; background-position: center; background-attachment: fixed; }
+        .login-card { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); width: 90%; max-width: 400px; text-align: center; }
+        .login-card h1 { color: #2d8a8c; margin-bottom: 10px; font-size: 32px; }
+        .login-card p { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
+        select, input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        button { width: 100%; padding: 12px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
+        button:hover { background-color: #1f5f61; }
+        #mainContent { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .header h2 { color: #2d8a8c; }
+        .logout-btn { width: auto; padding: 10px 20px; background-color: #dc3545; font-size: 14px; }
+        .logout-btn:hover { background-color: #c82333; }
+        .tab-buttons { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
+        .tab-btn { width: auto; padding: 12px 20px; background: transparent; color: #666; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .tab-btn:hover { color: #2d8a8c; }
+        .section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .shift-card { background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 10px; }
+        .shift-card h3 { color: #2d8a8c; margin-bottom: 10px; }
+        .shift-card p { margin: 5px 0; font-size: 14px; }
+        .shift-card button { width: auto; padding: 8px 16px; margin-top: 10px; font-size: 14px; }
+        #rosterCalendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 20px; }
+        .day-name { font-weight: bold; text-align: center; padding: 8px; background-color: #2d8a8c; color: white; border-radius: 4px; }
+        .day-cell { border: 1px solid #ddd; border-radius: 4px; padding: 10px; min-height: 120px; background: white; transition: background-color 0.2s; }
+        .day-cell:hover { background-color: #f0f0f0; }
+        .day-cell.weekend { background-color: #f9f9f9; }
+        .shift-display { font-size: 11px; margin-bottom: 3px; padding: 3px 5px; background-color: #e8f4f8; border-radius: 3px; cursor: pointer; }
+        .shift-display.my-shift { background-color: #90EE90; font-weight: bold; }
+        .shift-display.selected { background-color: #FFA500; font-weight: bold; border: 2px solid #FF6600; }
+        .shift-display.open { background-color: #ff6b6b; color: white; font-weight: bold; }
+        .request-card { background: white; border-left: 4px solid #0d6efd; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
+        .request-card.pending { background-color: #fff3cd; border-left-color: #ffc107; }
+        .request-card.accepted { background-color: #d4edda; border-left-color: #28a745; }
+        .request-card button { width: auto; padding: 8px 16px; margin: 5px 5px 5px 0; font-size: 14px; }
+        .btn-approve { background-color: #28a745; }
+        .btn-approve:hover { background-color: #218838; }
+        .btn-deny { background-color: #dc3545; }
+        .btn-deny:hover { background-color: #c82333; }
+        textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: Arial, sans-serif; font-size: 14px; margin-bottom: 10px; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; max-width: 600px; width: 90%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .modal-content h2 { color: #2d8a8c; margin-bottom: 20px; }
+        .modal-content button { width: auto; padding: 10px 20px; margin: 5px 5px 5px 0; }
     </style>
 </head>
 <body>
-    <!-- LOGIN CONTAINER -->
     <div id="loginContainer">
         <div class="login-card">
-            <h1>🚁 STAR 1</h1>
-            <h2 style="text-align: center; color: #666; font-size: 16px; margin-bottom: 30px;">Shift Trading System</h2>
+            <h1>🚑 STAR 1</h1>
+            <p>Shift Trading System</p>
             <div class="form-group">
-                <label for="loginStaffSelect">Select Your Name:</label>
+                <label>Select Your Name:</label>
                 <select id="loginStaffSelect"></select>
             </div>
             <div class="form-group">
-                <label for="loginPassword">Login Code:</label>
+                <label>Login Code:</label>
                 <input type="password" id="loginPassword" placeholder="Enter your login code">
             </div>
             <button onclick="handleLogin()">Login</button>
         </div>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div id="mainContent">
         <div class="header">
             <div>
-                <h1>🚁 STAR 1 Shift Trading</h1>
-                <p id="loggedInUser" style="margin-top: 5px; font-size: 14px;"></p>
+                <h2>STAR 1 Shift Trading System</h2>
+                <p id="loggedInUser" style="color: #666; margin: 5px 0 0 0;">Logged in as: </p>
             </div>
             <button class="logout-btn" onclick="handleLogout()">Logout</button>
         </div>
 
-        <div class="tabs">
-            <button id="shiftsTab">📋 My Shifts</button>
-            <button id="calendarTab">📅 Roster Calendar</button>
-            <button id="inboxTab">📬 Inbox</button>
+        <div class="tab-buttons">
+            <button id="shiftsTab" class="tab-btn" style="border-bottom: 3px solid #2d8a8c;">My Shifts</button>
+            <button id="calendarTab" class="tab-btn">Roster Calendar</button>
+            <button id="inboxTab" class="tab-btn">Trade Requests</button>
         </div>
 
-        <!-- SHIFTS SECTION -->
         <div id="shiftsSection" class="section">
-            <h2 id="shiftsTitle">Assigned Shifts</h2>
+            <h3 id="shiftsTitle"></h3>
             <div id="shiftsList"></div>
         </div>
 
-        <!-- CALENDAR SECTION -->
-        <div id="calendarSection" class="section">
-            <h2>Roster Calendar</h2>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin: 20px 0;">
-                <button id="prevMonth" style="padding: 8px 16px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer;">← Previous</button>
-                <h3 id="currentMonth" style="color: #2d8a8c;">April 2026</h3>
-                <button id="nextMonth" style="padding: 8px 16px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer;">Next →</button>
+        <div id="calendarSection" class="section" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <button id="prevMonth" style="width: auto; padding: 10px 20px;">← Previous</button>
+                <h3 id="currentMonth"></h3>
+                <button id="nextMonth" style="width: auto; padding: 10px 20px;">Next →</button>
             </div>
             <div id="rosterCalendar"></div>
+            <div id="tradeInstruction"></div>
         </div>
 
-        <!-- INBOX SECTION -->
-        <div id="inboxSection" class="section">
-            <h2>Trade Requests & Extra Shifts</h2>
+        <div id="inboxSection" class="section" style="display: none;">
+            <h3>Trade Requests</h3>
             <div id="inboxList"></div>
         </div>
     </div>
 
     <script>
-        // Initialize Firebase - Update with your config
         const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_AUTH_DOMAIN",
-            databaseURL: "YOUR_DATABASE_URL",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_STORAGE_BUCKET",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyBQPzr08LxHQDvw4dInN1OLm-vPyZ1qxws",
+            authDomain: "amcavailability-e8c4f.firebaseapp.com",
+            databaseURL: "https://amcavailability-e8c4f.firebaseio.com",
+            projectId: "amcavailability-e8c4f",
+            storageBucket: "amcavailability-e8c4f.appspot.com",
+            messagingSenderId: "710369559357",
+            appId: "1:710369559357:web:0e1ea4c7e1b4d7f8d5c5c5"
         };
-        
-        firebase.initializeApp(firebaseConfig);
 
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+
         let currentStaff = null;
         let allSchedules = {};
         let tradeRequests = {};
         let extraShiftRequests = {};
-        let isLoggedIn = false;
 
-        // Staff categorization
-        const PARAMEDICS = [
-          'Greg Barton', 'Scott McTaggart', 'Dave Allison', 'Mackenzie Wardle',
-          'Chad Hegge', 'Ken King', 'John Doyle', 'Bob Odney'
-        ];
-
-        const NURSES = [
-          'Graham Newton', 'Stuart Grant', 'Kellie Ann Vogelaar', 'Michelle Sexsmith',
-          'Carolyn Hogan', 'Kris Austin', 'Flo Butler', 'Jodi Scott', 'Janice Kirkham'
-        ];
-
-        // Admin users who can approve trades
+        const PARAMEDICS = ['Greg Barton', 'Scott McTaggart', 'Dave Allison', 'Mackenzie Wardle', 'Chad Hegge', 'Ken King', 'John Doyle', 'Bob Odney'];
+        const NURSES = ['Graham Newton', 'Stuart Grant', 'Kellie Ann Vogelaar', 'Michelle Sexsmith', 'Carolyn Hogan', 'Kris Austin', 'Flo Butler', 'Jodi Scott', 'Janice Kirkham'];
         const ADMINS = ['Greg Barton', 'Scott McTaggart', 'Graham Newton'];
-
-        // All staff
         const ALL_STAFF = [...PARAMEDICS, ...NURSES];
 
-        // Login codes - matching availability program
         const LOGIN_CODES = {
-          'Greg Barton': 'B123',
-          'Scott McTaggart': 'S456',
-          'Dave Allison': 'D789',
-          'Mackenzie Wardle': 'M321',
-          'Chad Hegge': 'C654',
-          'Ken King': 'K987',
-          'John Doyle': 'J135',
-          'Graham Newton': 'N246',
-          'Stuart Grant': 'G369',
-          'Kellie Ann Vogelaar': 'V481',
-          'Michelle Sexsmith': 'S579',
-          'Carolyn Hogan': 'H642',
-          'Kris Austin': 'A753',
-          'Flo Butler': 'B864',
-          'Jodi Scott': 'J975',
-          'Janice Kirkham': 'K108',
-          'Bob Odney': 'O555'
+            'Greg Barton': 'B123', 'Scott McTaggart': 'S456', 'Dave Allison': 'D789', 'Mackenzie Wardle': 'M321',
+            'Chad Hegge': 'C654', 'Ken King': 'K987', 'John Doyle': 'J135', 'Graham Newton': 'N246',
+            'Stuart Grant': 'G369', 'Kellie Ann Vogelaar': 'V481', 'Michelle Sexsmith': 'S579', 'Carolyn Hogan': 'H642',
+            'Kris Austin': 'A753', 'Flo Butler': 'B864', 'Jodi Scott': 'J975', 'Janice Kirkham': 'K108', 'Bob Odney': 'O555'
         };
 
-        // Track which shift is selected for trading
         let selectedTradeShift = null;
 
-        // Load data when page loads
-        window.addEventListener('DOMContentLoaded', () => {
-          console.log('Page loaded, initializing...');
-          showLoginScreen();
-        });
-
-        // ==================== LOGIN SYSTEM ====================
+        window.addEventListener('DOMContentLoaded', () => showLoginScreen());
 
         function showLoginScreen() {
-          // Hide main content
-          document.getElementById('mainContent').style.display = 'none';
-          document.getElementById('loginContainer').style.display = 'flex';
-          
-          // Set background image on login container
-          const loginContainer = document.getElementById('loginContainer');
-          loginContainer.style.backgroundImage = 'url("https://github.com/gbartonstars/2026-27-AMC-availability-YYC/blob/main/IMG_1342.jpeg?raw=true")';
-          loginContainer.style.backgroundSize = 'cover';
-          loginContainer.style.backgroundPosition = 'center';
-          loginContainer.style.backgroundAttachment = 'fixed';
-          
-          // Populate staff dropdown
-          const staffSelect = document.getElementById('loginStaffSelect');
-          staffSelect.innerHTML = '<option value="">-- Select Your Name --</option>';
-          
-          ALL_STAFF.forEach(staff => {
-            const option = document.createElement('option');
-            option.value = staff;
-            option.textContent = staff;
-            staffSelect.appendChild(option);
-          });
+            document.getElementById('mainContent').style.display = 'none';
+            document.getElementById('loginContainer').style.display = 'flex';
+            const loginContainer = document.getElementById('loginContainer');
+            loginContainer.style.backgroundImage = 'url("https://github.com/gbartonstars/2026-27-AMC-availability-YYC/blob/main/IMG_1342.jpeg?raw=true")';
+            const staffSelect = document.getElementById('loginStaffSelect');
+            staffSelect.innerHTML = '<option value="">-- Select Your Name --</option>';
+            ALL_STAFF.forEach(staff => {
+                const option = document.createElement('option');
+                option.value = staff;
+                option.textContent = staff;
+                staffSelect.appendChild(option);
+            });
         }
 
         function handleLogin() {
-          const selectedStaff = document.getElementById('loginStaffSelect').value;
-          const password = document.getElementById('loginPassword').value;
-          
-          if (!selectedStaff) {
-            alert('Please select your name');
-            return;
-          }
-          
-          if (!password) {
-            alert('Please enter your login code');
-            return;
-          }
-          
-          // Check password against login codes
-          const correctPassword = LOGIN_CODES[selectedStaff];
-          
-          if (password !== correctPassword) {
-            alert('❌ Invalid login code. Please try again.');
-            document.getElementById('loginPassword').value = '';
-            return;
-          }
-          
-          // Login successful
-          isLoggedIn = true;
-          currentStaff = selectedStaff;
-          console.log(`✅ Logged in as: ${currentStaff}`);
-          
-          // Hide login, show main content
-          document.getElementById('loginContainer').style.display = 'none';
-          document.getElementById('mainContent').style.display = 'block';
-          
-          // Update header with logged-in user
-          document.getElementById('loggedInUser').textContent = `Logged in as: ${currentStaff}`;
-          
-          // Load all data
-          loadAllSchedules();
-          loadTradeRequests();
-          loadExtraShiftRequests();
-          setupEventListeners();
-          
-          // Initialize the view
-          renderStaffsShifts();
-          renderRosterCalendar();
-          renderTradeInbox();
+            const selectedStaff = document.getElementById('loginStaffSelect').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!selectedStaff) { alert('Please select your name'); return; }
+            if (!password) { alert('Please enter your login code'); return; }
+            
+            const correctPassword = LOGIN_CODES[selectedStaff];
+            if (password !== correctPassword) {
+                alert('❌ Invalid login code. Please try again.');
+                document.getElementById('loginPassword').value = '';
+                return;
+            }
+            
+            currentStaff = selectedStaff;
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'block';
+            document.getElementById('loggedInUser').textContent = `Logged in as: ${currentStaff}`;
+            
+            loadAllSchedules();
+            loadTradeRequests();
+            loadExtraShiftRequests();
+            setupEventListeners();
+            renderStaffsShifts();
+            renderRosterCalendar();
+            renderTradeInbox();
         }
 
         function handleLogout() {
-          const confirmed = confirm('Are you sure you want to logout?');
-          if (!confirmed) return;
-          
-          isLoggedIn = false;
-          currentStaff = null;
-          selectedTradeShift = null;
-          
-          // Reset form
-          document.getElementById('loginPassword').value = '';
-          document.getElementById('loginStaffSelect').value = '';
-          
-          // Show login screen
-          document.getElementById('mainContent').style.display = 'none';
-          document.getElementById('loginContainer').style.display = 'flex';
-          
-          // Set background image on login container
-          const loginContainer = document.getElementById('loginContainer');
-          loginContainer.style.backgroundImage = 'url("https://github.com/gbartonstars/2026-27-AMC-availability-YYC/blob/main/IMG_1342.jpeg?raw=true")';
-          loginContainer.style.backgroundSize = 'cover';
-          loginContainer.style.backgroundPosition = 'center';
-          loginContainer.style.backgroundAttachment = 'fixed';
+            if (!confirm('Are you sure you want to logout?')) return;
+            currentStaff = null;
+            selectedTradeShift = null;
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginStaffSelect').value = '';
+            showLoginScreen();
         }
 
-        // ==================== MAIN APP ====================
-
         function setupEventListeners() {
-          const shiftsTab = document.getElementById('shiftsTab');
-          const calendarTab = document.getElementById('calendarTab');
-          const inboxTab = document.getElementById('inboxTab');
-          
-          if (shiftsTab) {
-            shiftsTab.addEventListener('click', () => {
-              document.getElementById('shiftsSection').style.display = 'block';
-              document.getElementById('calendarSection').style.display = 'none';
-              document.getElementById('inboxSection').style.display = 'none';
-              shiftsTab.style.borderBottom = '3px solid #2d8a8c';
-              calendarTab.style.borderBottom = 'none';
-              inboxTab.style.borderBottom = 'none';
-              selectedTradeShift = null;
+            document.getElementById('shiftsTab').addEventListener('click', () => {
+                document.getElementById('shiftsSection').style.display = 'block';
+                document.getElementById('calendarSection').style.display = 'none';
+                document.getElementById('inboxSection').style.display = 'none';
+                document.getElementById('shiftsTab').style.borderBottom = '3px solid #2d8a8c';
+                document.getElementById('calendarTab').style.borderBottom = 'none';
+                document.getElementById('inboxTab').style.borderBottom = 'none';
+                selectedTradeShift = null;
             });
-          }
-          
-          if (calendarTab) {
-            calendarTab.addEventListener('click', () => {
-              document.getElementById('shiftsSection').style.display = 'none';
-              document.getElementById('calendarSection').style.display = 'block';
-              document.getElementById('inboxSection').style.display = 'none';
-              calendarTab.style.borderBottom = '3px solid #2d8a8c';
-              shiftsTab.style.borderBottom = 'none';
-              inboxTab.style.borderBottom = 'none';
-              renderRosterCalendar();
+            
+            document.getElementById('calendarTab').addEventListener('click', () => {
+                document.getElementById('shiftsSection').style.display = 'none';
+                document.getElementById('calendarSection').style.display = 'block';
+                document.getElementById('inboxSection').style.display = 'none';
+                document.getElementById('calendarTab').style.borderBottom = '3px solid #2d8a8c';
+                document.getElementById('shiftsTab').style.borderBottom = 'none';
+                document.getElementById('inboxTab').style.borderBottom = 'none';
+                renderRosterCalendar();
             });
-          }
 
-          if (inboxTab) {
-            inboxTab.addEventListener('click', () => {
-              document.getElementById('shiftsSection').style.display = 'none';
-              document.getElementById('calendarSection').style.display = 'none';
-              document.getElementById('inboxSection').style.display = 'block';
-              inboxTab.style.borderBottom = '3px solid #2d8a8c';
-              shiftsTab.style.borderBottom = 'none';
-              calendarTab.style.borderBottom = 'none';
-              selectedTradeShift = null;
-              renderTradeInbox();
+            document.getElementById('inboxTab').addEventListener('click', () => {
+                document.getElementById('shiftsSection').style.display = 'none';
+                document.getElementById('calendarSection').style.display = 'none';
+                document.getElementById('inboxSection').style.display = 'block';
+                document.getElementById('inboxTab').style.borderBottom = '3px solid #2d8a8c';
+                document.getElementById('shiftsTab').style.borderBottom = 'none';
+                document.getElementById('calendarTab').style.borderBottom = 'none';
+                selectedTradeShift = null;
+                renderTradeInbox();
             });
-          }
 
-          const prevMonth = document.getElementById('prevMonth');
-          const nextMonth = document.getElementById('nextMonth');
-          
-          if (prevMonth) {
-            prevMonth.addEventListener('click', () => {
-              window.calendarDate.setMonth(window.calendarDate.getMonth() - 1);
-              renderRosterCalendar();
+            document.getElementById('prevMonth').addEventListener('click', () => {
+                window.calendarDate.setMonth(window.calendarDate.getMonth() - 1);
+                renderRosterCalendar();
             });
-          }
-          
-          if (nextMonth) {
-            nextMonth.addEventListener('click', () => {
-              window.calendarDate.setMonth(window.calendarDate.getMonth() + 1);
-              renderRosterCalendar();
+            
+            document.getElementById('nextMonth').addEventListener('click', () => {
+                window.calendarDate.setMonth(window.calendarDate.getMonth() + 1);
+                renderRosterCalendar();
             });
-          }
         }
 
         function loadAllSchedules() {
-          console.log('Loading roster from Firebase...');
-          db.ref('generatedRoster').on('value', (snapshot) => {
-            allSchedules = snapshot.val() || {};
-            console.log('Roster loaded');
-            if (currentStaff) {
-              renderStaffsShifts();
-              renderRosterCalendar();
-            }
-          }, (error) => {
-            console.error('Error loading roster:', error);
-          });
+            db.ref('generatedRoster').on('value', (snapshot) => {
+                allSchedules = snapshot.val() || {};
+                if (currentStaff) { renderStaffsShifts(); renderRosterCalendar(); }
+            }, (error) => console.error('Error loading roster:', error));
         }
 
         function loadTradeRequests() {
-          console.log('Loading trade requests...');
-          db.ref('tradeRequests').on('value', (snapshot) => {
-            tradeRequests = snapshot.val() || {};
-            console.log('Trade requests loaded');
-            if (currentStaff) {
-              renderTradeInbox();
-            }
-          }, (error) => {
-            console.error('Error loading trade requests:', error);
-          });
+            db.ref('tradeRequests').on('value', (snapshot) => {
+                tradeRequests = snapshot.val() || {};
+                if (currentStaff) renderTradeInbox();
+            }, (error) => console.error('Error loading trade requests:', error));
         }
 
         function loadExtraShiftRequests() {
-          console.log('Loading extra shift requests...');
-          db.ref('extraShiftRequests').on('value', (snapshot) => {
-            extraShiftRequests = snapshot.val() || {};
-            console.log('Extra shift requests loaded');
-            if (currentStaff) {
-              renderRosterCalendar();
-            }
-          }, (error) => {
-            console.error('Error loading extra shift requests:', error);
-          });
+            db.ref('extraShiftRequests').on('value', (snapshot) => {
+                extraShiftRequests = snapshot.val() || {};
+                if (currentStaff) renderRosterCalendar();
+            }, (error) => console.error('Error loading extra shift requests:', error));
         }
 
         function getStaffRole(staffName) {
-          if (PARAMEDICS.includes(staffName)) return 'paramedic';
-          if (NURSES.includes(staffName)) return 'nurse';
-          return null;
+            if (PARAMEDICS.includes(staffName)) return 'paramedic';
+            if (NURSES.includes(staffName)) return 'nurse';
+            return null;
         }
-
-        // ==================== SHIFT VALIDATION RULES ====================
-
-        function isNightShift(shiftId) {
-          return shiftId.includes('Night');
-        }
-
-        function isDayShift(shiftId) {
-          return shiftId.includes('Day');
-        }
-
-        function addDays(dateStr, days) {
-          const d = new Date(dateStr + 'T00:00:00');
-          d.setDate(d.getDate() + days);
-          return d.toISOString().split('T')[0];
-        }
-
-        function subtractDays(dateStr, days) {
-          const d = new Date(dateStr + 'T00:00:00');
-          d.setDate(d.getDate() - days);
-          return d.toISOString().split('T')[0];
-        }
-
-        function validateScheduleForStaff(staffName, schedule) {
-          const violations = [];
-          const shiftTypes = ['paraDay', 'nurseDay', 'paraNight', 'nurseNight'];
-          
-          const staffShifts = [];
-          for (const [dateStr, dayData] of Object.entries(schedule)) {
-            if (!dayData || typeof dayData !== 'object') continue;
-            for (const shiftId of shiftTypes) {
-              if (dayData[shiftId] === staffName) {
-                staffShifts.push({ date: dateStr, shiftId: shiftId });
-              }
-            }
-          }
-          
-          staffShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
-          
-          for (let i = 0; i < staffShifts.length; i++) {
-            const current = staffShifts[i];
-            
-            if (isNightShift(current.shiftId)) {
-              const nextDay = addDays(current.date, 1);
-              const hasNextDayShift = staffShifts.some(shift => shift.date === nextDay);
-              if (hasNextDayShift) {
-                violations.push(`Cannot work night shift on ${current.date} and then work on ${nextDay}`);
-                return violations;
-              }
-            }
-            
-            if (isDayShift(current.shiftId)) {
-              const hasSameDayNight = staffShifts.some(shift => 
-                shift.date === current.date && isNightShift(shift.shiftId)
-              );
-              if (hasSameDayNight) {
-                violations.push(`Cannot work day shift and night shift on same day ${current.date}`);
-                return violations;
-              }
-              
-              const prevDay = subtractDays(current.date, 1);
-              const hasPrevDayNight = staffShifts.some(shift => 
-                shift.date === prevDay && isNightShift(shift.shiftId)
-              );
-              if (hasPrevDayNight) {
-                violations.push(`Cannot work night shift on ${prevDay} and then day shift on ${current.date}`);
-                return violations;
-              }
-            }
-          }
-          
-          return violations;
-        }
-
-        function validateExtraShiftRules(staffName, dateStr, shiftId) {
-          const simulatedSchedule = JSON.parse(JSON.stringify(allSchedules));
-          if (!simulatedSchedule[dateStr]) simulatedSchedule[dateStr] = {};
-          simulatedSchedule[dateStr][shiftId] = staffName;
-          return validateScheduleForStaff(staffName, simulatedSchedule);
-        }
-
-        function validateShiftRulesForSpecificShifts(staffName, schedule, targetDates) {
-          const violations = [];
-          const shiftTypes = ['paraDay', 'nurseDay', 'paraNight', 'nurseNight'];
-          
-          const staffShifts = [];
-          for (const dateStr of targetDates) {
-            const dayData = schedule[dateStr];
-            if (!dayData || typeof dayData !== 'object') continue;
-            for (const shiftId of shiftTypes) {
-              if (dayData[shiftId] === staffName) {
-                staffShifts.push({ date: dateStr, shiftId: shiftId });
-              }
-            }
-          }
-          
-          staffShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
-          
-          for (let i = 0; i < staffShifts.length; i++) {
-            const current = staffShifts[i];
-            
-            if (isNightShift(current.shiftId)) {
-              const nextDay = addDays(current.date, 1);
-              const hasNextDayShift = staffShifts.some(shift => shift.date === nextDay);
-              if (hasNextDayShift) {
-                violations.push(`Cannot work night shift on ${current.date} and then work on ${nextDay}`);
-                return violations;
-              }
-            }
-            
-            if (isDayShift(current.shiftId)) {
-              const hasSameDayNight = staffShifts.some(shift => 
-                shift.date === current.date && isNightShift(shift.shiftId)
-              );
-              if (hasSameDayNight) {
-                violations.push(`Cannot work day shift and night shift on same day ${current.date}`);
-                return violations;
-              }
-              
-              const prevDay = subtractDays(current.date, 1);
-              const hasPrevDayNight = staffShifts.some(shift => 
-                shift.date === prevDay && isNightShift(shift.shiftId)
-              );
-              if (hasPrevDayNight) {
-                violations.push(`Cannot work night shift on ${prevDay} and then day shift on ${current.date}`);
-                return violations;
-              }
-            }
-          }
-          
-          return violations;
-        }
-
-        // ==================== RENDER FUNCTIONS ====================
 
         function renderStaffsShifts() {
-          if (!currentStaff) return;
+            if (!currentStaff) return;
+            const shiftsTitle = document.getElementById('shiftsTitle');
+            const shiftsList = document.getElementById('shiftsList');
+            shiftsTitle.textContent = `${currentStaff}'s Assigned Shifts`;
+            shiftsList.innerHTML = '';
 
-          const shiftsSection = document.getElementById('shiftsSection');
-          const shiftsTitle = document.getElementById('shiftsTitle');
-          const shiftsList = document.getElementById('shiftsList');
-
-          shiftsTitle.textContent = `${currentStaff}'s Assigned Shifts`;
-          shiftsList.innerHTML = '';
-
-          const staffShifts = [];
-          
-          for (const [dateStr, dayData] of Object.entries(allSchedules)) {
-            if (!dayData || typeof dayData !== 'object') continue;
-            
-            const shiftTypes = [
-              { key: 'paraDay', label: 'Paramedic - Day' },
-              { key: 'nurseDay', label: 'Nurse - Day' },
-              { key: 'paraNight', label: 'Paramedic - Night' },
-              { key: 'nurseNight', label: 'Nurse - Night' }
-            ];
-            
-            shiftTypes.forEach(shift => {
-              if (dayData[shift.key] === currentStaff) {
-                staffShifts.push({
-                  date: dateStr,
-                  shiftId: shift.key,
-                  shiftLabel: shift.label
+            const staffShifts = [];
+            for (const [dateStr, dayData] of Object.entries(allSchedules)) {
+                if (!dayData || typeof dayData !== 'object') continue;
+                const shiftTypes = [
+                    { key: 'paraDay', label: 'Paramedic - Day' },
+                    { key: 'nurseDay', label: 'Nurse - Day' },
+                    { key: 'paraNight', label: 'Paramedic - Night' },
+                    { key: 'nurseNight', label: 'Nurse - Night' }
+                ];
+                shiftTypes.forEach(shift => {
+                    if (dayData[shift.key] === currentStaff) {
+                        staffShifts.push({ date: dateStr, shiftId: shift.key, shiftLabel: shift.label });
+                    }
                 });
-              }
+            }
+
+            if (staffShifts.length === 0) {
+                shiftsList.innerHTML = '<p style="color: #999;">No shifts assigned in the roster.</p>';
+                return;
+            }
+
+            staffShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
+            staffShifts.forEach((shift) => {
+                const d = new Date(shift.date + 'T00:00:00');
+                const card = document.createElement('div');
+                card.className = 'shift-card';
+                card.innerHTML = `<h3>${d.toDateString()}</h3><p><strong>Shift:</strong> ${shift.shiftLabel}</p><p><strong>Date:</strong> ${shift.date}</p><button onclick="selectTradeShiftInCalendar('${shift.date}', '${shift.shiftId}', '${shift.shiftLabel}')">Request Trade</button>`;
+                shiftsList.appendChild(card);
             });
-          }
-
-          if (staffShifts.length === 0) {
-            shiftsList.innerHTML = '<p style="color: #999;">No shifts assigned in the roster.</p>';
-            shiftsSection.style.display = 'block';
-            return;
-          }
-
-          staffShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-          staffShifts.forEach((shift) => {
-            const d = new Date(shift.date + 'T00:00:00');
-            const dateFormatted = d.toDateString();
-            
-            const card = document.createElement('div');
-            card.className = 'shift-card';
-            
-            card.innerHTML = `
-              <h3>${dateFormatted}</h3>
-              <p><strong>Shift:</strong> ${shift.shiftLabel}</p>
-              <p><strong>Date:</strong> ${shift.date}</p>
-              <button onclick="selectTradeShiftInCalendar('${shift.date}', '${shift.shiftId}', '${shift.shiftLabel}')" style="padding: 8px 16px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                Request Trade
-              </button>
-            `;
-            shiftsList.appendChild(card);
-          });
-
-          shiftsSection.style.display = 'block';
         }
 
         function selectTradeShiftInCalendar(myDate, myShiftId, myShiftLabel) {
-          selectedTradeShift = {
-            date: myDate,
-            shiftId: myShiftId,
-            shiftLabel: myShiftLabel
-          };
-
-          document.getElementById('shiftsSection').style.display = 'none';
-          document.getElementById('calendarSection').style.display = 'block';
-          document.getElementById('inboxSection').style.display = 'none';
-          
-          const shiftsTab = document.getElementById('shiftsTab');
-          const calendarTab = document.getElementById('calendarTab');
-          
-          shiftsTab.style.borderBottom = 'none';
-          calendarTab.style.borderBottom = '3px solid #2d8a8c';
-
-          renderRosterCalendar();
-          
-          const instruction = document.createElement('div');
-          instruction.id = 'tradeInstruction';
-          instruction.style.cssText = 'background-color: #cfe9ff; padding: 15px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #0d6efd;';
-          instruction.innerHTML = `
-            <strong>📍 Shift Selected for Trade:</strong> ${myShiftLabel} on ${myDate}<br>
-            <em>Click on another person's shift below to initiate the trade request</em>
-          `;
-          
-          const calendarSection = document.getElementById('calendarSection');
-          const existingInstruction = document.getElementById('tradeInstruction');
-          if (existingInstruction) existingInstruction.remove();
-          calendarSection.insertBefore(instruction, calendarSection.firstChild);
+            selectedTradeShift = { date: myDate, shiftId: myShiftId, shiftLabel: myShiftLabel };
+            document.getElementById('shiftsSection').style.display = 'none';
+            document.getElementById('calendarSection').style.display = 'block';
+            document.getElementById('inboxSection').style.display = 'none';
+            document.getElementById('shiftsTab').style.borderBottom = 'none';
+            document.getElementById('calendarTab').style.borderBottom = '3px solid #2d8a8c';
+            document.getElementById('inboxTab').style.borderBottom = 'none';
+            renderRosterCalendar();
+            
+            const instruction = document.createElement('div');
+            instruction.id = 'tradeInstruction';
+            instruction.style.cssText = 'background-color: #cfe9ff; padding: 15px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #0d6efd;';
+            instruction.innerHTML = `<strong>📍 Shift Selected for Trade:</strong> ${myShiftLabel} on ${myDate}<br><em>Click on another person's shift below to initiate the trade request</em>`;
+            const calendarSection = document.getElementById('calendarSection');
+            const existingInstruction = document.getElementById('tradeInstruction');
+            if (existingInstruction) existingInstruction.remove();
+            calendarSection.insertBefore(instruction, calendarSection.firstChild);
         }
 
         function renderRosterCalendar() {
-          if (!currentStaff) return;
+            if (!currentStaff) return;
+            const calendarEl = document.getElementById('rosterCalendar');
+            if (!calendarEl) return;
+            if (!window.calendarDate) window.calendarDate = new Date(2026, 3, 1);
 
-          const calendarEl = document.getElementById('rosterCalendar');
-          if (!calendarEl) return;
-
-          if (!window.calendarDate) {
-            window.calendarDate = new Date(2026, 3, 1);
-          }
-
-          const year = window.calendarDate.getFullYear();
-          const month = window.calendarDate.getMonth();
-          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                              'July', 'August', 'September', 'October', 'November', 'December'];
-          
-          document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
-
-          calendarEl.innerHTML = '';
-          
-          const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-          dayHeaders.forEach(day => {
-            const header = document.createElement('div');
-            header.style.cssText = 'font-weight: bold; text-align: center; padding: 8px; background-color: #2d8a8c; color: white;';
-            header.textContent = day;
-            calendarEl.appendChild(header);
-          });
-
-          const firstDay = new Date(year, month, 1).getDay();
-          const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-          for (let i = 0; i < firstDay; i++) {
-            const emptyCell = document.createElement('div');
-            emptyCell.style.cssText = 'padding: 10px; border: 1px solid #eee;';
-            calendarEl.appendChild(emptyCell);
-          }
-
-          for (let day = 1; day <= daysInMonth; day++) {
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const dayData = allSchedules[dateStr];
+            const year = window.calendarDate.getFullYear();
+            const month = window.calendarDate.getMonth();
+            const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
             
-            const dayCell = document.createElement('div');
-            dayCell.style.cssText = 'padding: 10px; border: 1px solid #ddd; min-height: 120px; cursor: pointer; transition: background-color 0.2s;';
-            dayCell.addEventListener('mouseenter', () => dayCell.style.backgroundColor = '#f0f0f0');
-            dayCell.addEventListener('mouseleave', () => dayCell.style.backgroundColor = 'transparent');
+            document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+            calendarEl.innerHTML = '';
+            
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                const header = document.createElement('div');
+                header.className = 'day-name';
+                header.textContent = day;
+                calendarEl.appendChild(header);
+            });
 
-            const dayNum = document.createElement('div');
-            dayNum.style.cssText = 'font-weight: bold; margin-bottom: 5px; color: #333;';
-            dayNum.textContent = day;
-            dayCell.appendChild(dayNum);
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            if (dayData) {
-              const shifts = [
-                { key: 'paraDay', label: 'Para Day', icon: '🚑' },
-                { key: 'nurseDay', label: 'RN Day', icon: '⚕️' },
-                { key: 'paraNight', label: 'Para Night', icon: '🌙🚑' },
-                { key: 'nurseNight', label: 'RN Night', icon: '🌙⚕️' }
-              ];
-
-              shifts.forEach(shift => {
-                if (dayData[shift.key]) {
-                  const staffName = dayData[shift.key];
-                  const shiftDiv = document.createElement('div');
-                  shiftDiv.style.cssText = 'font-size: 11px; margin-bottom: 3px; padding: 3px 5px; background-color: #e8f4f8; border-radius: 3px; cursor: pointer; transition: all 0.2s;';
-                  
-                  if (staffName === currentStaff) {
-                    shiftDiv.style.backgroundColor = '#90EE90';
-                    shiftDiv.style.fontWeight = 'bold';
-                  }
-
-                  if (selectedTradeShift && dateStr === selectedTradeShift.date && shift.key === selectedTradeShift.shiftId) {
-                    shiftDiv.style.backgroundColor = '#FFA500';
-                    shiftDiv.style.fontWeight = 'bold';
-                    shiftDiv.style.border = '2px solid #FF6600';
-                  }
-
-                  shiftDiv.innerHTML = `<strong>${shift.icon}</strong> ${staffName}`;
-                  
-                  shiftDiv.addEventListener('click', () => {
-                    if (selectedTradeShift && dateStr === selectedTradeShift.date && shift.key === selectedTradeShift.shiftId) {
-                      selectedTradeShift = null;
-                      renderRosterCalendar();
-                    } else if (!selectedTradeShift) {
-                      if (staffName === currentStaff) {
-                        selectTradeShiftInCalendar(dateStr, shift.key, shift.label);
-                      }
-                    } else {
-                      initiateTradeFromCalendar(dateStr, shift.key, staffName, shift.label);
-                    }
-                  });
-
-                  dayCell.appendChild(shiftDiv);
-                } else {
-                  const emptyShiftDiv = document.createElement('div');
-                  emptyShiftDiv.style.cssText = 'font-size: 11px; margin-bottom: 3px; padding: 3px 5px; background-color: #ff6b6b; border-radius: 3px; cursor: pointer; transition: all 0.2s; font-weight: bold; color: white;';
-                  
-                  const shiftLabel = shift.label;
-                  emptyShiftDiv.innerHTML = `<strong>${shift.icon}</strong> OPEN`;
-                  
-                  emptyShiftDiv.addEventListener('mouseenter', () => emptyShiftDiv.style.backgroundColor = '#ff5252');
-                  emptyShiftDiv.addEventListener('mouseleave', () => emptyShiftDiv.style.backgroundColor = '#ff6b6b');
-                  
-                  emptyShiftDiv.addEventListener('click', () => {
-                    requestExtraShift(dateStr, shift.key, shiftLabel);
-                  });
-
-                  dayCell.appendChild(emptyShiftDiv);
-                }
-              });
-            } else {
-              const noShifts = document.createElement('div');
-              noShifts.style.cssText = 'font-size: 11px; color: #999;';
-              noShifts.textContent = 'No roster';
-              dayCell.appendChild(noShifts);
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'day-cell';
+                calendarEl.appendChild(emptyCell);
             }
 
-            calendarEl.appendChild(dayCell);
-          }
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayData = allSchedules[dateStr];
+                
+                const dayCell = document.createElement('div');
+                dayCell.className = 'day-cell';
+                const dayNum = document.createElement('div');
+                dayNum.style.fontWeight = 'bold';
+                dayNum.style.marginBottom = '5px';
+                dayNum.textContent = day;
+                dayCell.appendChild(dayNum);
 
-          document.getElementById('calendarSection').style.display = 'block';
+                if (dayData) {
+                    const shifts = [
+                        { key: 'paraDay', label: 'Para Day', icon: '🚑' },
+                        { key: 'nurseDay', label: 'RN Day', icon: '⚕️' },
+                        { key: 'paraNight', label: 'Para Night', icon: '🌙🚑' },
+                        { key: 'nurseNight', label: 'RN Night', icon: '🌙⚕️' }
+                    ];
+
+                    shifts.forEach(shift => {
+                        if (dayData[shift.key]) {
+                            const staffName = dayData[shift.key];
+                            const shiftDiv = document.createElement('div');
+                            shiftDiv.className = 'shift-display';
+                            
+                            if (staffName === currentStaff) shiftDiv.classList.add('my-shift');
+                            if (selectedTradeShift && dateStr === selectedTradeShift.date && shift.key === selectedTradeShift.shiftId) shiftDiv.classList.add('selected');
+
+                            shiftDiv.innerHTML = `<strong>${shift.icon}</strong> ${staffName}`;
+                            
+                            shiftDiv.addEventListener('click', () => {
+                                if (selectedTradeShift && dateStr === selectedTradeShift.date && shift.key === selectedTradeShift.shiftId) {
+                                    selectedTradeShift = null;
+                                    renderRosterCalendar();
+                                } else if (!selectedTradeShift) {
+                                    if (staffName === currentStaff) selectTradeShiftInCalendar(dateStr, shift.key, shift.label);
+                                } else {
+                                    initiateTradeFromCalendar(dateStr, shift.key, staffName, shift.label);
+                                }
+                            });
+
+                            dayCell.appendChild(shiftDiv);
+                        } else {
+                            const emptyShiftDiv = document.createElement('div');
+                            emptyShiftDiv.className = 'shift-display open';
+                            emptyShiftDiv.innerHTML = `<strong>${shift.icon}</strong> OPEN`;
+                            emptyShiftDiv.addEventListener('click', () => requestExtraShift(dateStr, shift.key, shift.label));
+                            dayCell.appendChild(emptyShiftDiv);
+                        }
+                    });
+                } else {
+                    const noShifts = document.createElement('div');
+                    noShifts.style.fontSize = '11px';
+                    noShifts.style.color = '#999';
+                    noShifts.textContent = 'No roster';
+                    dayCell.appendChild(noShifts);
+                }
+
+                calendarEl.appendChild(dayCell);
+            }
         }
 
         function initiateTradeFromCalendar(targetDate, targetShiftId, targetStaff, targetShiftLabel) {
-          if (!selectedTradeShift) {
-            alert('No shift selected for trading');
-            return;
-          }
+            if (!selectedTradeShift) { alert('No shift selected for trading'); return; }
+            const myDate = selectedTradeShift.date;
+            const myShiftId = selectedTradeShift.shiftId;
+            const myStaff = currentStaff;
+            const currentRole = getStaffRole(myStaff);
+            const targetRole = getStaffRole(targetStaff);
 
-          const myDate = selectedTradeShift.date;
-          const myShiftId = selectedTradeShift.shiftId;
-          const myStaff = currentStaff;
+            if (currentRole !== targetRole) {
+                alert(`❌ You can only trade with other ${currentRole === 'paramedic' ? 'Paramedics' : 'Nurses'}.\n\n${targetStaff} is a ${targetRole === 'paramedic' ? 'Paramedic' : 'Nurse'}.`);
+                return;
+            }
+            if (targetStaff === myStaff) { alert('You cannot trade with yourself!'); return; }
 
-          const currentRole = getStaffRole(myStaff);
-          const targetRole = getStaffRole(targetStaff);
-
-          if (currentRole !== targetRole) {
-            alert(`❌ You can only trade with other ${currentRole === 'paramedic' ? 'Paramedics' : 'Nurses'}.\n\n${targetStaff} is a ${targetRole === 'paramedic' ? 'Paramedic' : 'Nurse'}.`);
-            return;
-          }
-
-          if (targetStaff === myStaff) {
-            alert('You cannot trade with yourself!');
-            return;
-          }
-
-          const affectedDates = [myDate, targetDate];
-          const myViolations = validateShiftRulesForSpecificShifts(myStaff, allSchedules, affectedDates.concat([addDays(targetDate, 1), subtractDays(targetDate, 1)]));
-          const theirViolations = validateShiftRulesForSpecificShifts(targetStaff, allSchedules, affectedDates.concat([addDays(myDate, 1), subtractDays(myDate, 1)]));
-          const violations = [...myViolations, ...theirViolations];
-
-          if (violations.length > 0) {
-            const violationMessage = violations.join('\n') + '\n\n❌ This trade violates shift scheduling rules and cannot be approved.';
-            alert(violationMessage);
-            return;
-          }
-
-          openTradeConfirmationModal(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff, targetShiftLabel);
+            openTradeConfirmationModal(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff, targetShiftLabel);
         }
 
         function requestExtraShift(dateStr, shiftId, shiftLabel) {
-          const currentRole = getStaffRole(currentStaff);
-          const shiftIsForRole = (shiftId.includes('para')) ? 'paramedic' : 'nurse';
-          
-          if (currentRole !== shiftIsForRole) {
-            alert(`❌ You can only request shifts for your role.\n\nThis is a ${shiftIsForRole === 'paramedic' ? 'Paramedic' : 'Nurse'} shift.`);
-            return;
-          }
-
-          const violations = validateExtraShiftRules(currentStaff, dateStr, shiftId);
-
-          if (violations.length > 0) {
-            const violationMessage = violations.join('\n') + '\n\n❌ This shift request violates scheduling rules and cannot be approved.';
-            alert(violationMessage);
-            return;
-          }
-
-          const modal = document.createElement('div');
-          modal.id = 'extraShiftModal';
-          modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-          `;
-          
-          const modalContent = document.createElement('div');
-          modalContent.style.cssText = `
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            max-width: 600px;
-            width: 90%;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-          `;
-
-          const d = new Date(dateStr + 'T00:00:00');
-
-          modalContent.innerHTML = `
-            <h2>Request Extra Shift</h2>
-            <div style="background-color: #d4edda; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-              <p><strong>Shift:</strong> ${shiftLabel}</p>
-              <p><strong>Date:</strong> ${d.toDateString()}</p>
-              <p style="color: #666; font-size: 12px;">An admin will need to approve this request</p>
-            </div>
-            <div style="margin-bottom: 15px;">
-              <label><strong>Reason for requesting this shift:</strong></label>
-              <textarea id="extraShiftReason" style="width: 100%; padding: 8px; height: 80px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-              <button onclick="closeExtraShiftModal()" style="padding: 10px 20px; background-color: #999; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Cancel
-              </button>
-              <button onclick="submitExtraShiftRequest('${dateStr}', '${shiftId}', '${shiftLabel}')" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                Submit Request
-              </button>
-            </div>
-          `;
-          
-          modal.appendChild(modalContent);
-          document.body.appendChild(modal);
-          
-          modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-              closeExtraShiftModal();
+            const currentRole = getStaffRole(currentStaff);
+            const shiftIsForRole = (shiftId.includes('para')) ? 'paramedic' : 'nurse';
+            
+            if (currentRole !== shiftIsForRole) {
+                alert(`❌ You can only request shifts for your role.\n\nThis is a ${shiftIsForRole === 'paramedic' ? 'Paramedic' : 'Nurse'} shift.`);
+                return;
             }
-          });
+
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            const d = new Date(dateStr + 'T00:00:00');
+
+            modalContent.innerHTML = `
+                <h2>Request Extra Shift</h2>
+                <div style="background-color: #d4edda; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <p><strong>Shift:</strong> ${shiftLabel}</p>
+                    <p><strong>Date:</strong> ${d.toDateString()}</p>
+                    <p style="color: #666; font-size: 12px;">An admin will need to approve this request</p>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label><strong>Reason for requesting this shift:</strong></label>
+                    <textarea id="extraShiftReason" placeholder="Enter reason..."></textarea>
+                </div>
+                <div>
+                    <button onclick="closeExtraShiftModal()" style="background-color: #999;">Cancel</button>
+                    <button onclick="submitExtraShiftRequest('${dateStr}', '${shiftId}', '${shiftLabel}')" class="btn-approve">Submit Request</button>
+                </div>
+            `;
+            
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeExtraShiftModal(); });
         }
 
         function closeExtraShiftModal() {
-          const modal = document.getElementById('extraShiftModal');
-          if (modal) {
-            modal.remove();
-          }
+            const modal = document.querySelector('.modal');
+            if (modal) modal.remove();
         }
 
         function submitExtraShiftRequest(dateStr, shiftId, shiftLabel) {
-          const reason = document.getElementById('extraShiftReason').value || 'No reason provided';
-          
-          const request = {
-            staffName: currentStaff,
-            date: dateStr,
-            shiftId: shiftId,
-            shiftLabel: shiftLabel,
-            reason: reason,
-            status: 'pending',
-            createdAt: new Date().toISOString()
-          };
-          
-          const requestId = `${currentStaff}_${dateStr}_${shiftId}_${Date.now()}`;
-          
-          db.ref(`extraShiftRequests/${requestId}`).set(request)
-            .then(() => {
-              alert(`✅ Extra shift request submitted!\n\nAdmins will review and approve shortly.`);
-              closeExtraShiftModal();
-              renderRosterCalendar();
-            })
-            .catch((error) => {
-              console.error('Error submitting extra shift request:', error);
-              alert('❌ Error submitting request. Please try again.');
+            const reason = document.getElementById('extraShiftReason').value || 'No reason provided';
+            const request = { staffName: currentStaff, date: dateStr, shiftId: shiftId, shiftLabel: shiftLabel, reason: reason, status: 'pending', createdAt: new Date().toISOString() };
+            const requestId = `${currentStaff}_${dateStr}_${shiftId}_${Date.now()}`;
+            
+            db.ref(`extraShiftRequests/${requestId}`).set(request).then(() => {
+                alert(`✅ Extra shift request submitted!\n\nAdmins will review and approve shortly.`);
+                closeExtraShiftModal();
+                renderRosterCalendar();
+            }).catch((error) => {
+                console.error('Error submitting extra shift request:', error);
+                alert('❌ Error submitting request. Please try again.');
             });
         }
 
         function openTradeConfirmationModal(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff, targetShiftLabel) {
-          const modal = document.createElement('div');
-          modal.id = 'tradeModal';
-          modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-          `;
-          
-          const modalContent = document.createElement('div');
-          modalContent.style.cssText = `
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            max-width: 600px;
-            width: 90%;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-          `;
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            const modalContent = document.createElement('div');
+            modalContent.className = 'modal-content';
+            const myShiftLabel = getShiftLabelFromId(myShiftId);
+            const d1 = new Date(myDate + 'T00:00:00');
+            const d2 = new Date(targetDate + 'T00:00:00');
 
-          const myShiftLabel = getShiftLabelFromId(myShiftId);
-          const d1 = new Date(myDate + 'T00:00:00');
-          const d2 = new Date(targetDate + 'T00:00:00');
-
-          modalContent.innerHTML = `
-            <h2>Confirm Trade Request</h2>
-            <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-              <p><strong>✓ You give:</strong> ${myShiftLabel} on ${d1.toDateString()}</p>
-              <p><strong>✓ You receive:</strong> ${targetShiftLabel} on ${d2.toDateString()}</p>
-              <p><strong>Trading with:</strong> ${targetStaff}</p>
-            </div>
-            <div style="margin-bottom: 15px;">
-              <label><strong>Trade Reason (optional):</strong></label>
-              <textarea id="tradeReason" style="width: 100%; padding: 8px; height: 80px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
-            </div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-              <button onclick="closeModal()" style="padding: 10px 20px; background-color: #999; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Cancel
-              </button>
-              <button onclick="submitTrade('${myDate}', '${myShiftId}', '${myStaff}', '${targetDate}', '${targetShiftId}', '${targetStaff}')" style="padding: 10px 20px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                Submit Trade Request
-              </button>
-            </div>
-          `;
-          
-          modal.appendChild(modalContent);
-          document.body.appendChild(modal);
-          
-          modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-              closeModal();
-            }
-          });
+            modalContent.innerHTML = `
+                <h2>Confirm Trade Request</h2>
+                <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+                    <p><strong>✓ You give:</strong> ${myShiftLabel} on ${d1.toDateString()}</p>
+                    <p><strong>✓ You receive:</strong> ${targetShiftLabel} on ${d2.toDateString()}</p>
+                    <p><strong>Trading with:</strong> ${targetStaff}</p>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label><strong>Trade Reason (optional):</strong></label>
+                    <textarea id="tradeReason" placeholder="Enter reason..."></textarea>
+                </div>
+                <div>
+                    <button onclick="closeModal()" style="background-color: #999;">Cancel</button>
+                    <button onclick="submitTrade('${myDate}', '${myShiftId}', '${myStaff}', '${targetDate}', '${targetShiftId}', '${targetStaff}')" class="btn-approve">Submit Trade Request</button>
+                </div>
+            `;
+            
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
         }
 
         function renderTradeInbox() {
-          if (!currentStaff) return;
+            if (!currentStaff) return;
+            const inboxList = document.getElementById('inboxList');
+            inboxList.innerHTML = '';
 
-          const inboxSection = document.getElementById('inboxSection');
-          const inboxList = document.getElementById('inboxList');
-          inboxList.innerHTML = '';
+            const myPendingRequests = [];
+            const requestsForMe = [];
+            const acceptedRequests = [];
 
-          const myPendingRequests = [];
-          const requestsForMe = [];
-          const acceptedRequests = [];
-
-          for (const [tradeId, trade] of Object.entries(tradeRequests)) {
-            if (trade.fromStaff === currentStaff && trade.status === 'pending') {
-              myPendingRequests.push({ id: tradeId, ...trade });
-            }
-            if (trade.toStaff === currentStaff && trade.status === 'pending') {
-              requestsForMe.push({ id: tradeId, ...trade });
-            }
-            if ((trade.fromStaff === currentStaff || trade.toStaff === currentStaff) && 
-                (trade.status === 'accepted' || trade.status === 'both_accepted' || trade.status === 'adminApproved')) {
-              acceptedRequests.push({ id: tradeId, ...trade });
-            }
-          }
-
-          let html = '';
-
-          if (ADMINS.includes(currentStaff)) {
-            let pendingExtraShifts = [];
-            for (const [reqId, req] of Object.entries(extraShiftRequests)) {
-              if (req.status === 'pending') {
-                pendingExtraShifts.push({ id: reqId, ...req });
-              }
+            for (const [tradeId, trade] of Object.entries(tradeRequests)) {
+                if (trade.fromStaff === currentStaff && trade.status === 'pending') myPendingRequests.push({ id: tradeId, ...trade });
+                if (trade.toStaff === currentStaff && trade.status === 'pending') requestsForMe.push({ id: tradeId, ...trade });
+                if ((trade.fromStaff === currentStaff || trade.toStaff === currentStaff) && (trade.status === 'accepted' || trade.status === 'both_accepted' || trade.status === 'adminApproved')) acceptedRequests.push({ id: tradeId, ...trade });
             }
 
-            if (pendingExtraShifts.length > 0) {
-              html += '<h3 style="color: #28a745;">📋 Extra Shift Requests (Admin)</h3>';
-              pendingExtraShifts.forEach(req => {
-                const d = new Date(req.date + 'T00:00:00');
-                html += `
-                  <div style="background-color: #fff3cd; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #ffc107;">
-                    <p><strong>${req.staffName}</strong> requesting <strong>${req.shiftLabel}</strong> on <strong>${d.toDateString()}</strong></p>
-                    <p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${req.reason}</p>
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                      <button onclick="approveExtraShift('${req.id}', '${req.date}', '${req.shiftId}', '${req.staffName}')" style="padding: 8px 16px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                        ✓ Approve
-                      </button>
-                      <button onclick="denyExtraShift('${req.id}')" style="padding: 8px 16px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                        ✗ Deny
-                      </button>
-                    </div>
-                  </div>
-                `;
-              });
+            if (ADMINS.includes(currentStaff)) {
+                let pendingExtraShifts = [];
+                for (const [reqId, req] of Object.entries(extraShiftRequests)) {
+                    if (req.status === 'pending') pendingExtraShifts.push({ id: reqId, ...req });
+                }
+
+                if (pendingExtraShifts.length > 0) {
+                    const heading = document.createElement('h3');
+                    heading.style.color = '#28a745';
+                    heading.style.marginTop = '20px';
+                    heading.textContent = '📋 Extra Shift Requests (Admin)';
+                    inboxList.appendChild(heading);
+                    pendingExtraShifts.forEach(req => {
+                        const d = new Date(req.date + 'T00:00:00');
+                        const card = document.createElement('div');
+                        card.className = 'request-card pending';
+                        card.innerHTML = `<p><strong>${req.staffName}</strong> requesting <strong>${req.shiftLabel}</strong> on <strong>${d.toDateString()}</strong></p><p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${req.reason}</p><button onclick="approveExtraShift('${req.id}', '${req.date}', '${req.shiftId}', '${req.staffName}')" class="btn-approve">✓ Approve</button><button onclick="denyExtraShift('${req.id}')" class="btn-deny">✗ Deny</button>`;
+                        inboxList.appendChild(card);
+                    });
+                }
             }
-          }
 
-          if (myPendingRequests.length > 0) {
-            html += '<h3 style="margin-top: 30px;">Requests Awaiting Response</h3>';
-            myPendingRequests.forEach(trade => {
-              const d1 = new Date(trade.fromDate + 'T00:00:00');
-              const d2 = new Date(trade.toDate + 'T00:00:00');
-              html += `
-                <div style="background-color: #fff3cd; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #ffc107;">
-                  <p><strong>You requested:</strong> ${trade.toStaff}'s ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p>
-                  <p><strong>You offered:</strong> Your ${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()})</p>
-                  <p style="color: #666; font-size: 12px;">Waiting for ${trade.toStaff}'s response...</p>
-                </div>
-              `;
-            });
-          }
+            if (myPendingRequests.length > 0) {
+                const heading = document.createElement('h3');
+                heading.style.marginTop = '30px';
+                heading.textContent = 'Requests Awaiting Response';
+                inboxList.appendChild(heading);
+                myPendingRequests.forEach(trade => {
+                    const d1 = new Date(trade.fromDate + 'T00:00:00');
+                    const d2 = new Date(trade.toDate + 'T00:00:00');
+                    const card = document.createElement('div');
+                    card.className = 'request-card pending';
+                    card.innerHTML = `<p><strong>You requested:</strong> ${trade.toStaff}'s ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p><p><strong>You offered:</strong> Your ${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()})</p><p style="color: #666; font-size: 12px;">Waiting for ${trade.toStaff}'s response...</p>`;
+                    inboxList.appendChild(card);
+                });
+            }
 
-          if (requestsForMe.length > 0) {
-            html += '<h3 style="margin-top: 30px;">Requests from Others</h3>';
-            requestsForMe.forEach(trade => {
-              const d1 = new Date(trade.fromDate + 'T00:00:00');
-              const d2 = new Date(trade.toDate + 'T00:00:00');
-              html += `
-                <div style="background-color: #d4edff; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #0d6efd;">
-                  <p><strong>${trade.fromStaff} is requesting:</strong> Your ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p>
-                  <p><strong>They offer:</strong> Their ${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()})</p>
-                  <p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${trade.reason}</p>
-                  <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <button onclick="acceptTrade('${trade.id}')" style="padding: 8px 16px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                      ✓ Accept
-                    </button>
-                    <button onclick="declineTrade('${trade.id}')" style="padding: 8px 16px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                      ✗ Decline
-                    </button>
-                  </div>
-                </div>
-              `;
-            });
-          }
+            if (requestsForMe.length > 0) {
+                const heading = document.createElement('h3');
+                heading.style.marginTop = '30px';
+                heading.textContent = 'Requests from Others';
+                inboxList.appendChild(heading);
+                requestsForMe.forEach(trade => {
+                    const d1 = new Date(trade.fromDate + 'T00:00:00');
+                    const d2 = new Date(trade.toDate + 'T00:00:00');
+                    const card = document.createElement('div');
+                    card.className = 'request-card';
+                    card.style.borderLeftColor = '#0d6efd';
+                    card.innerHTML = `<p><strong>${trade.fromStaff} is requesting:</strong> Your ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p><p><strong>They offer:</strong> Their ${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()})</p><p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${trade.reason}</p><button onclick="acceptTrade('${trade.id}')" class="btn-approve">✓ Accept</button><button onclick="declineTrade('${trade.id}')" class="btn-deny">✗ Decline</button>`;
+                    inboxList.appendChild(card);
+                });
+            }
 
-          if (acceptedRequests.length > 0) {
-            html += '<h3 style="margin-top: 30px;">✓ Accepted/Approved Trades</h3>';
-            acceptedRequests.forEach(trade => {
-              const d1 = new Date(trade.fromDate + 'T00:00:00');
-              const d2 = new Date(trade.toDate + 'T00:00:00');
-              const statusColor = trade.status === 'adminApproved' ? '#28a745' : '#ffc107';
-              const statusText = trade.status === 'adminApproved' ? 'Admin Approved' : 'Both Accepted';
-              html += `
-                <div style="background-color: #d4edda; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid ${statusColor};">
-                  <p><strong>${trade.fromStaff} ↔ ${trade.toStaff}</strong></p>
-                  <p>${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()}) ↔ ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p>
-                  <p style="color: #666; font-size: 12px;"><strong>Status:</strong> ${statusText}</p>
-                  ${ADMINS.includes(currentStaff) && trade.status === 'both_accepted' ? `
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                      <button onclick="approveTrade('${trade.id}')" style="padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                        🔒 Admin Approve (Apply Changes)
-                      </button>
-                    </div>
-                  ` : ''}
-                </div>
-              `;
-            });
-          }
+            if (acceptedRequests.length > 0) {
+                const heading = document.createElement('h3');
+                heading.style.marginTop = '30px';
+                heading.style.color = '#28a745';
+                heading.textContent = '✓ Accepted/Approved Trades';
+                inboxList.appendChild(heading);
+                acceptedRequests.forEach(trade => {
+                    const d1 = new Date(trade.fromDate + 'T00:00:00');
+                    const d2 = new Date(trade.toDate + 'T00:00:00');
+                    const statusColor = trade.status === 'adminApproved' ? '#28a745' : '#ffc107';
+                    const statusText = trade.status === 'adminApproved' ? 'Admin Approved' : 'Both Accepted';
+                    const card = document.createElement('div');
+                    card.className = 'request-card accepted';
+                    card.style.borderLeftColor = statusColor;
+                    card.innerHTML = `<p><strong>${trade.fromStaff} ↔ ${trade.toStaff}</strong></p><p>${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()}) ↔ ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p><p style="color: #666; font-size: 12px;"><strong>Status:</strong> ${statusText}</p>${ADMINS.includes(currentStaff) && trade.status === 'both_accepted' ? `<button onclick="approveTrade('${trade.id}')" style="background-color: #007bff; margin-top: 10px;">🔒 Admin Approve (Apply Changes)</button>` : ''}`;
+                    inboxList.appendChild(card);
+                });
+            }
 
-          if (html === '') {
-            html = '<p style="color: #999;">No requests at this time.</p>';
-          }
-
-          inboxList.innerHTML = html;
-          inboxSection.style.display = 'block';
+            if (inboxList.children.length === 0) {
+                const noRequests = document.createElement('p');
+                noRequests.style.color = '#999';
+                noRequests.textContent = 'No requests at this time.';
+                inboxList.appendChild(noRequests);
+            }
         }
 
         function getShiftLabelFromId(shiftId) {
-          const labels = {
-            'paraDay': 'Paramedic - Day',
-            'nurseDay': 'Nurse - Day',
-            'paraNight': 'Paramedic - Night',
-            'nurseNight': 'Nurse - Night'
-          };
-          return labels[shiftId] || shiftId;
+            const labels = { 'paraDay': 'Paramedic - Day', 'nurseDay': 'Nurse - Day', 'paraNight': 'Paramedic - Night', 'nurseNight': 'Nurse - Night' };
+            return labels[shiftId] || shiftId;
         }
 
         function closeModal() {
-          const modal = document.getElementById('tradeModal');
-          if (modal) {
-            modal.remove();
-          }
-          selectedTradeShift = null;
+            const modal = document.querySelector('.modal');
+            if (modal) modal.remove();
+            selectedTradeShift = null;
         }
 
         function submitTrade(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff) {
-          const tradeReason = document.getElementById('tradeReason').value;
-          
-          const tradeRequest = {
-            fromStaff: myStaff,
-            fromDate: myDate,
-            fromShift: myShiftId,
-            toStaff: targetStaff,
-            toDate: targetDate,
-            toShift: targetShiftId,
-            reason: tradeReason || 'No reason provided',
-            status: 'pending',
-            fromStaffAccepted: true,
-            toStaffAccepted: false,
-            createdAt: new Date().toISOString(),
-            createdBy: myStaff
-          };
-          
-          const tradeId = `${myStaff}_${myDate}_${Date.now()}`;
-          db.ref(`tradeRequests/${tradeId}`).set(tradeRequest)
-            .then(() => {
-              alert(`✅ Trade request submitted!\n\n${targetStaff} will need to accept or decline.`);
-              closeModal();
-              selectedTradeShift = null;
-              renderStaffsShifts();
-              renderRosterCalendar();
-              renderTradeInbox();
-            })
-            .catch((error) => {
-              console.error('Error submitting trade:', error);
-              alert('❌ Error submitting trade request. Please try again.');
+            const tradeReason = document.getElementById('tradeReason').value;
+            const tradeRequest = { fromStaff: myStaff, fromDate: myDate, fromShift: myShiftId, toStaff: targetStaff, toDate: targetDate, toShift: targetShiftId, reason: tradeReason || 'No reason provided', status: 'pending', fromStaffAccepted: true, toStaffAccepted: false, createdAt: new Date().toISOString(), createdBy: myStaff };
+            const tradeId = `${myStaff}_${myDate}_${Date.now()}`;
+            
+            db.ref(`tradeRequests/${tradeId}`).set(tradeRequest).then(() => {
+                alert(`✅ Trade request submitted!\n\n${targetStaff} will need to accept or decline.`);
+                closeModal();
+                selectedTradeShift = null;
+                renderStaffsShifts();
+                renderRosterCalendar();
+                renderTradeInbox();
+            }).catch((error) => {
+                console.error('Error submitting trade:', error);
+                alert('❌ Error submitting trade request. Please try again.');
             });
         }
 
         function acceptTrade(tradeId) {
-          db.ref(`tradeRequests/${tradeId}`).update({
-            toStaffAccepted: true,
-            status: 'both_accepted',
-            toStaffAcceptedAt: new Date().toISOString()
-          })
-            .then(() => {
-              alert('✅ You accepted the trade!\n\nAn admin will review and apply the changes.');
-              renderTradeInbox();
-            })
-            .catch((error) => {
-              console.error('Error accepting trade:', error);
-              alert('❌ Error accepting trade.');
-            });
+            db.ref(`tradeRequests/${tradeId}`).update({ toStaffAccepted: true, status: 'both_accepted', toStaffAcceptedAt: new Date().toISOString() })
+                .then(() => { alert('✅ You accepted the trade!\n\nAn admin will review and apply the changes.'); renderTradeInbox(); })
+                .catch((error) => { console.error('Error accepting trade:', error); alert('❌ Error accepting trade.'); });
         }
 
         function declineTrade(tradeId) {
-          const reason = prompt('Reason for declining (optional):');
-          db.ref(`tradeRequests/${tradeId}`).update({
-            status: 'declined',
-            declinedBy: currentStaff,
-            declinedReason: reason || 'No reason provided',
-            declinedAt: new Date().toISOString()
-          })
-            .then(() => {
-              alert('✅ Trade declined.');
-              renderTradeInbox();
-            })
-            .catch((error) => {
-              console.error('Error declining trade:', error);
-              alert('❌ Error declining trade.');
-            });
+            const reason = prompt('Reason for declining (optional):');
+            db.ref(`tradeRequests/${tradeId}`).update({ status: 'declined', declinedBy: currentStaff, declinedReason: reason || 'No reason provided', declinedAt: new Date().toISOString() })
+                .then(() => { alert('✅ Trade declined.'); renderTradeInbox(); })
+                .catch((error) => { console.error('Error declining trade:', error); alert('❌ Error declining trade.'); });
         }
 
         function approveExtraShift(requestId, dateStr, shiftId, staffName) {
-          db.ref(`extraShiftRequests/${requestId}`).update({
-            status: 'approved',
-            approvedBy: currentStaff,
-            approvedAt: new Date().toISOString()
-          })
-            .then(() => {
-              const dayData = allSchedules[dateStr] || {};
-              dayData[shiftId] = staffName;
-              allSchedules[dateStr] = dayData;
-              return db.ref('generatedRoster').set(allSchedules);
-            })
-            .then(() => {
-              alert(`✅ Extra shift approved and assigned to ${staffName}!`);
-              renderRosterCalendar();
-              renderTradeInbox();
-            })
-            .catch((error) => {
-              console.error('Error approving extra shift:', error);
-              alert('❌ Error approving extra shift. Please try again.');
-            });
+            db.ref(`extraShiftRequests/${requestId}`).update({ status: 'approved', approvedBy: currentStaff, approvedAt: new Date().toISOString() })
+                .then(() => {
+                    const dayData = allSchedules[dateStr] || {};
+                    dayData[shiftId] = staffName;
+                    allSchedules[dateStr] = dayData;
+                    return db.ref('generatedRoster').set(allSchedules);
+                })
+                .then(() => { alert(`✅ Extra shift approved and assigned to ${staffName}!`); renderRosterCalendar(); renderTradeInbox(); })
+                .catch((error) => { console.error('Error approving extra shift:', error); alert('❌ Error approving extra shift. Please try again.'); });
         }
 
         function denyExtraShift(requestId) {
-          const reason = prompt('Reason for denying (optional):');
-          db.ref(`extraShiftRequests/${requestId}`).update({
-            status: 'denied',
-            deniedBy: currentStaff,
-            deniedReason: reason || 'No reason provided',
-            deniedAt: new Date().toISOString()
-          })
-            .then(() => {
-              alert('✅ Extra shift request denied.');
-              renderTradeInbox();
-            })
-            .catch((error) => {
-              console.error('Error denying extra shift:', error);
-              alert('❌ Error denying request. Please try again.');
-            });
+            const reason = prompt('Reason for denying (optional):');
+            db.ref(`extraShiftRequests/${requestId}`).update({ status: 'denied', deniedBy: currentStaff, deniedReason: reason || 'No reason provided', deniedAt: new Date().toISOString() })
+                .then(() => { alert('✅ Extra shift request denied.'); renderTradeInbox(); })
+                .catch((error) => { console.error('Error denying extra shift:', error); alert('❌ Error denying request. Please try again.'); });
         }
 
         function approveTrade(tradeId) {
-          if (!ADMINS.includes(currentStaff)) {
-            alert('Only admins can approve trades');
-            return;
-          }
+            if (!ADMINS.includes(currentStaff)) { alert('Only admins can approve trades'); return; }
+            const trade = tradeRequests[tradeId];
+            if (!trade) { alert('Trade not found'); return; }
 
-          const trade = tradeRequests[tradeId];
-          if (!trade) {
-            alert('Trade not found');
-            return;
-          }
+            const fromDate = trade.fromDate;
+            const toDate = trade.toDate;
+            const fromShift = trade.fromShift;
+            const toShift = trade.toShift;
 
-          const fromDate = trade.fromDate;
-          const toDate = trade.toDate;
-          const fromShift = trade.fromShift;
-          const toShift = trade.toShift;
+            if (!allSchedules[fromDate] || !allSchedules[toDate]) { alert('Error: Dates not found in roster'); return; }
 
-          if (!allSchedules[fromDate] || !allSchedules[toDate]) {
-            alert('Error: Dates not found in roster');
-            return;
-          }
+            const temp = allSchedules[fromDate][fromShift];
+            allSchedules[fromDate][fromShift] = allSchedules[toDate][toShift];
+            allSchedules[toDate][toShift] = temp;
 
-          const temp = allSchedules[fromDate][fromShift];
-          allSchedules[fromDate][fromShift] = allSchedules[toDate][toShift];
-          allSchedules[toDate][toShift] = temp;
-
-          db.ref('generatedRoster').set(allSchedules)
-            .then(() => {
-              return db.ref(`tradeRequests/${tradeId}`).update({
-                status: 'adminApproved',
-                approvedBy: currentStaff,
-                approvedAt: new Date().toISOString()
-              });
-            })
-            .then(() => {
-              alert(`✅ Trade approved and applied!\n\nShifts have been swapped in the roster.`);
-              renderRosterCalendar();
-              renderStaffsShifts();
-              renderTradeInbox();
-            })
-            .catch((error) => {
-              console.error('Error approving trade:', error);
-              alert('❌ Error approving trade. Please try again.');
-            });
+            db.ref('generatedRoster').set(allSchedules)
+                .then(() => {
+                    return db.ref(`tradeRequests/${tradeId}`).update({ status: 'adminApproved', approvedBy: currentStaff, approvedAt: new Date().toISOString() });
+                })
+                .then(() => { alert(`✅ Trade approved and applied!\n\nShifts have been swapped in the roster.`); renderRosterCalendar(); renderStaffsShifts(); renderTradeInbox(); })
+                .catch((error) => { console.error('Error approving trade:', error); alert('❌ Error approving trade. Please try again.'); });
         }
     </script>
 </body>
