@@ -7,55 +7,323 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background-color: #f5f5f5; color: #333; }
-        #loginContainer { width: 100%; height: 100vh; display: flex; justify-content: center; align-items: center; background-size: cover; background-position: center; background-attachment: fixed; }
-        .login-card { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); width: 90%; max-width: 400px; text-align: center; }
-        .login-card h1 { color: #2d8a8c; margin-bottom: 10px; font-size: 32px; }
-        .login-card p { color: #666; margin-bottom: 30px; font-size: 14px; }
-        .form-group { margin-bottom: 20px; text-align: left; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; color: #333; }
-        select, input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
-        button { width: 100%; padding: 12px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
-        button:hover { background-color: #1f5f61; }
-        #mainContent { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; }
-        .header { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-        .header h2 { color: #2d8a8c; }
-        .logout-btn { width: auto; padding: 10px 20px; background-color: #dc3545; font-size: 14px; }
-        .logout-btn:hover { background-color: #c82333; }
-        .tab-buttons { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; }
-        .tab-btn { width: auto; padding: 12px 20px; background: transparent; color: #666; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-weight: bold; transition: all 0.3s; }
-        .tab-btn:hover { color: #2d8a8c; }
-        .section { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .shift-card { background: #f9f9f9; border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 10px; }
-        .shift-card h3 { color: #2d8a8c; margin-bottom: 10px; }
-        .shift-card p { margin: 5px 0; font-size: 14px; }
-        .shift-card button { width: auto; padding: 8px 16px; margin-top: 10px; font-size: 14px; }
-        #rosterCalendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 20px; }
-        .day-name { font-weight: bold; text-align: center; padding: 8px; background-color: #2d8a8c; color: white; border-radius: 4px; }
-        .day-cell { border: 1px solid #ddd; border-radius: 4px; padding: 10px; min-height: 120px; background: white; transition: background-color 0.2s; }
-        .day-cell:hover { background-color: #f0f0f0; }
-        .day-cell.weekend { background-color: #f9f9f9; }
-        .shift-display { font-size: 11px; margin-bottom: 3px; padding: 3px 5px; background-color: #e8f4f8; border-radius: 3px; cursor: pointer; }
-        .shift-display.my-shift { background-color: #90EE90; font-weight: bold; }
-        .shift-display.selected { background-color: #FFA500; font-weight: bold; border: 2px solid #FF6600; }
-        .shift-display.open { background-color: #ff6b6b; color: white; font-weight: bold; }
-        .request-card { background: white; border-left: 4px solid #0d6efd; padding: 15px; margin-bottom: 10px; border-radius: 5px; }
-        .request-card.pending { background-color: #fff3cd; border-left-color: #ffc107; }
-        .request-card.accepted { background-color: #d4edda; border-left-color: #28a745; }
-        .request-card button { width: auto; padding: 8px 16px; margin: 5px 5px 5px 0; font-size: 14px; }
-        .btn-approve { background-color: #28a745; }
-        .btn-approve:hover { background-color: #218838; }
-        .btn-deny { background-color: #dc3545; }
-        .btn-deny:hover { background-color: #c82333; }
-        textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: Arial, sans-serif; font-size: 14px; margin-bottom: 10px; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-        .modal-content { background: white; padding: 30px; border-radius: 8px; max-width: 600px; width: 90%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        .modal-content h2 { color: #2d8a8c; margin-bottom: 20px; }
-        .modal-content button { width: auto; padding: 10px 20px; margin: 5px 5px 5px 0; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        #loginContainer {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-color: #e8f4f5;
+        }
+        
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+        
+        .login-card h1 {
+            color: #2d8a8c;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .login-card p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        select, input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #2d8a8c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #1f5f61;
+        }
+        
+        #mainContent {
+            display: none;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header h2 {
+            color: #2d8a8c;
+        }
+        
+        .logout-btn {
+            width: auto;
+            padding: 10px 20px;
+            background-color: #dc3545;
+            font-size: 14px;
+        }
+        
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+        
+        .tab-btn {
+            width: auto;
+            padding: 12px 20px;
+            background: transparent;
+            color: #666;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn:hover {
+            color: #2d8a8c;
+        }
+        
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .shift-card {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .shift-card h3 {
+            color: #2d8a8c;
+            margin-bottom: 10px;
+        }
+        
+        .shift-card p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        
+        .shift-card button {
+            width: auto;
+            padding: 8px 16px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        #rosterCalendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .day-name {
+            font-weight: bold;
+            text-align: center;
+            padding: 8px;
+            background-color: #2d8a8c;
+            color: white;
+            border-radius: 4px;
+        }
+        
+        .day-cell {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            min-height: 120px;
+            background: white;
+            transition: background-color 0.2s;
+        }
+        
+        .day-cell:hover {
+            background-color: #f0f0f0;
+        }
+        
+        .day-cell.weekend {
+            background-color: #f9f9f9;
+        }
+        
+        .shift-display {
+            font-size: 11px;
+            margin-bottom: 3px;
+            padding: 3px 5px;
+            background-color: #e8f4f8;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        
+        .shift-display.my-shift {
+            background-color: #90EE90;
+            font-weight: bold;
+        }
+        
+        .shift-display.selected {
+            background-color: #FFA500;
+            font-weight: bold;
+            border: 2px solid #FF6600;
+        }
+        
+        .shift-display.open {
+            background-color: #ff6b6b;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .request-card {
+            background: white;
+            border-left: 4px solid #0d6efd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        
+        .request-card.pending {
+            background-color: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        
+        .request-card.accepted {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+        }
+        
+        .request-card button {
+            width: auto;
+            padding: 8px 16px;
+            margin: 5px 5px 5px 0;
+            font-size: 14px;
+        }
+        
+        .btn-approve {
+            background-color: #28a745;
+        }
+        
+        .btn-approve:hover {
+            background-color: #218838;
+        }
+        
+        .btn-deny {
+            background-color: #dc3545;
+        }
+        
+        .btn-deny:hover {
+            background-color: #c82333;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .modal-content h2 {
+            color: #2d8a8c;
+            margin-bottom: 20px;
+        }
+        
+        .modal-content button {
+            width: auto;
+            padding: 10px 20px;
+            margin: 5px 5px 5px 0;
+        }
     </style>
 </head>
 <body>
+    <!-- LOGIN SCREEN -->
     <div id="loginContainer">
         <div class="login-card">
             <h1>🚑 STAR 1</h1>
@@ -72,6 +340,7 @@
         </div>
     </div>
 
+    <!-- MAIN APP -->
     <div id="mainContent">
         <div class="header">
             <div>
@@ -87,11 +356,13 @@
             <button id="inboxTab" class="tab-btn">Trade Requests</button>
         </div>
 
+        <!-- SHIFTS SECTION -->
         <div id="shiftsSection" class="section">
             <h3 id="shiftsTitle"></h3>
             <div id="shiftsList"></div>
         </div>
 
+        <!-- CALENDAR SECTION -->
         <div id="calendarSection" class="section" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <button id="prevMonth" style="width: auto; padding: 10px 20px;">← Previous</button>
@@ -102,6 +373,7 @@
             <div id="tradeInstruction"></div>
         </div>
 
+        <!-- INBOX SECTION -->
         <div id="inboxSection" class="section" style="display: none;">
             <h3>Trade Requests</h3>
             <div id="inboxList"></div>
@@ -110,13 +382,13 @@
 
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyBQPzr08LxHQDvw4dInN1OLm-vPyZ1qxws",
-            authDomain: "amcavailability-e8c4f.firebaseapp.com",
-            databaseURL: "https://amcavailability-e8c4f.firebaseio.com",
-            projectId: "amcavailability-e8c4f",
-            storageBucket: "amcavailability-e8c4f.appspot.com",
-            messagingSenderId: "710369559357",
-            appId: "1:710369559357:web:0e1ea4c7e1b4d7f8d5c5c5"
+            apiKey: "AIzaSyB3EuJcuoyCAc43Xvuv8G7M4o8_BgLeeTQ",
+            authDomain: "star1-schedule.firebaseapp.com",
+            databaseURL: "https://star1-schedule-default-rtdb.firebaseio.com/",
+            projectId: "star1-schedule",
+            storageBucket: "star1-schedule.firebasestorage.app",
+            messagingSenderId: "892421370116",
+            appId: "1:892421370116:web:30b705b567fc02b82fe051"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -146,8 +418,6 @@
         function showLoginScreen() {
             document.getElementById('mainContent').style.display = 'none';
             document.getElementById('loginContainer').style.display = 'flex';
-            const loginContainer = document.getElementById('loginContainer');
-            loginContainer.style.backgroundImage = 'url("https://github.com/gbartonstars/2026-27-AMC-availability-YYC/blob/main/IMG_1342.jpeg?raw=true")';
             const staffSelect = document.getElementById('loginStaffSelect');
             staffSelect.innerHTML = '<option value="">-- Select Your Name --</option>';
             ALL_STAFF.forEach(staff => {
@@ -196,33 +466,37 @@
         }
 
         function setupEventListeners() {
-            document.getElementById('shiftsTab').addEventListener('click', () => {
+            const shiftsTab = document.getElementById('shiftsTab');
+            const calendarTab = document.getElementById('calendarTab');
+            const inboxTab = document.getElementById('inboxTab');
+            
+            shiftsTab.addEventListener('click', () => {
                 document.getElementById('shiftsSection').style.display = 'block';
                 document.getElementById('calendarSection').style.display = 'none';
                 document.getElementById('inboxSection').style.display = 'none';
-                document.getElementById('shiftsTab').style.borderBottom = '3px solid #2d8a8c';
-                document.getElementById('calendarTab').style.borderBottom = 'none';
-                document.getElementById('inboxTab').style.borderBottom = 'none';
+                shiftsTab.style.borderBottom = '3px solid #2d8a8c';
+                calendarTab.style.borderBottom = 'none';
+                inboxTab.style.borderBottom = 'none';
                 selectedTradeShift = null;
             });
             
-            document.getElementById('calendarTab').addEventListener('click', () => {
+            calendarTab.addEventListener('click', () => {
                 document.getElementById('shiftsSection').style.display = 'none';
                 document.getElementById('calendarSection').style.display = 'block';
                 document.getElementById('inboxSection').style.display = 'none';
-                document.getElementById('calendarTab').style.borderBottom = '3px solid #2d8a8c';
-                document.getElementById('shiftsTab').style.borderBottom = 'none';
-                document.getElementById('inboxTab').style.borderBottom = 'none';
+                calendarTab.style.borderBottom = '3px solid #2d8a8c';
+                shiftsTab.style.borderBottom = 'none';
+                inboxTab.style.borderBottom = 'none';
                 renderRosterCalendar();
             });
 
-            document.getElementById('inboxTab').addEventListener('click', () => {
+            inboxTab.addEventListener('click', () => {
                 document.getElementById('shiftsSection').style.display = 'none';
                 document.getElementById('calendarSection').style.display = 'none';
                 document.getElementById('inboxSection').style.display = 'block';
-                document.getElementById('inboxTab').style.borderBottom = '3px solid #2d8a8c';
-                document.getElementById('shiftsTab').style.borderBottom = 'none';
-                document.getElementById('calendarTab').style.borderBottom = 'none';
+                inboxTab.style.borderBottom = '3px solid #2d8a8c';
+                shiftsTab.style.borderBottom = 'none';
+                calendarTab.style.borderBottom = 'none';
                 selectedTradeShift = null;
                 renderTradeInbox();
             });
@@ -241,6 +515,11 @@
         function loadAllSchedules() {
             db.ref('generatedRoster').on('value', (snapshot) => {
                 allSchedules = snapshot.val() || {};
+                console.log('📥 Loaded Roster Data from star1-schedule:', allSchedules);
+                console.log('Total dates in roster:', Object.keys(allSchedules).length);
+                if (Object.keys(allSchedules).length === 0) {
+                    console.log('ℹ️ Roster is empty - ready for data import or fresh start');
+                }
                 if (currentStaff) { renderStaffsShifts(); renderRosterCalendar(); }
             }, (error) => console.error('Error loading roster:', error));
         }
@@ -288,8 +567,10 @@
                 });
             }
 
+            console.log(`🔍 ${currentStaff}'s shifts found:`, staffShifts.length);
+            
             if (staffShifts.length === 0) {
-                shiftsList.innerHTML = '<p style="color: #999;">No shifts assigned in the roster.</p>';
+                shiftsList.innerHTML = '<p style="color: #999;">No shifts assigned in the roster.<br><small style="display:block; margin-top: 10px; color: #666;">✓ Roster loaded successfully<br>✗ But you have no shifts assigned yet</small></p>';
                 return;
             }
 
@@ -548,6 +829,7 @@
                     heading.style.marginTop = '20px';
                     heading.textContent = '📋 Extra Shift Requests (Admin)';
                     inboxList.appendChild(heading);
+                    
                     pendingExtraShifts.forEach(req => {
                         const d = new Date(req.date + 'T00:00:00');
                         const card = document.createElement('div');
