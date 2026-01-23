@@ -22,6 +22,59 @@
     };
     firebase.initializeApp(firebaseConfig);
   </script>
+
+  <style>
+    .tab-buttons {
+      display: flex;
+      gap: 0;
+      margin: 20px 0;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .tab-btn {
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-weight: bold;
+      color: #666;
+      transition: all 0.3s;
+    }
+    
+    .tab-btn:hover {
+      color: #2d8a8c;
+    }
+    
+    #calendarSection {
+      margin-top: 20px;
+    }
+    
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .calendar-header button {
+      padding: 8px 16px;
+      background-color: #2d8a8c;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    
+    #rosterCalendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+      border: 1px solid #ddd;
+      background-color: white;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -58,14 +111,30 @@
       </select>
     </section>
 
+    <!-- Tab navigation -->
+    <div class="tab-buttons">
+      <button id="shiftsTab" class="tab-btn" style="border-bottom: 3px solid #2d8a8c;">My Shifts</button>
+      <button id="calendarTab" class="tab-btn">Calendar View</button>
+    </div>
+
+    <!-- Shifts List View -->
     <section id="shiftsSection" style="display:none;">
       <h2 id="shiftsTitle"></h2>
       <div id="shiftsList" class="shifts-list"></div>
     </section>
 
-    <section id="tradeRequestsSection" style="display:none; margin-top: 40px;">
-      <h2>My Trade Requests</h2>
-      <div id="tradeRequestsList" class="trades-list"></div>
+    <!-- Calendar View -->
+    <section id="calendarSection" style="display:none;">
+      <div class="calendar-header">
+        <button id="prevMonth">← Previous</button>
+        <h2 id="currentMonth"></h2>
+        <button id="nextMonth">Next →</button>
+      </div>
+      <div id="rosterCalendar"></div>
+      <p style="margin-top: 15px; font-size: 12px; color: #666;">
+        <strong>Legend:</strong> 🚑 = Paramedic | ⚕️ = Nurse | 🌙 = Night Shift | 
+        <span style="background-color: #90EE90; padding: 2px 6px; border-radius: 3px;">Green = Your Shift</span>
+      </p>
     </section>
   </div>
 
