@@ -13,7 +13,7 @@ loadAllSchedules();
 
 // ===== LOAD SCHEDULE DATA =====
 function loadAllSchedules() {
-  db.ref('schedule').once('value', (snapshot) => {
+  db.ref('scheduleData').once('value', (snapshot) => {
     allSchedules = snapshot.val() || {};
     if (currentStaff) {
       renderStaffsShifts();
@@ -22,21 +22,6 @@ function loadAllSchedules() {
 }
 
 // ===== STAFF SELECTION =====
-function onStaffSelected(e) {
-  currentStaff = e.target.value;
-  if (!currentStaff) {
-    document.getElementById('shiftsSection').style.display = 'none';
-    document.getElementById('tradeRequestsSection').style.display = 'none';
-    return;
-  }
-  
-  renderStaffsShifts();
-  loadTradeRequests();
-  document.getElementById('shiftsSection').style.display = 'block';
-  document.getElementById('tradeRequestsSection').style.display = 'block';
-}
-
-// ===== RENDER SHIFTS FOR SELECTED STAFF =====
 function renderStaffsShifts() {
   if (!currentStaff) return;
 
@@ -48,14 +33,17 @@ function renderStaffsShifts() {
   shiftsList.innerHTML = '';
 
   const staffShifts = [];
+  
+  // allSchedules is keyed by date (e.g., "2026-04-01")
   for (const [date, dayData] of Object.entries(allSchedules)) {
-    if (dayData.assignments) {
-      for (const [shiftId, staffName] of Object.entries(dayData.assignments)) {
+    if (dayData && typeof dayData === 'object') {
+      // dayData has structure like: { "AMC-1": "Greg Barton", "AMC-2": "Scott McTaggart" }
+      for (const [shiftId, staffName] of Object.entries(dayData)) {
         if (staffName === currentStaff) {
           staffShifts.push({
             date,
             shiftId,
-            shift: dayData.shifts?.[shiftId] || 'Unknown Shift'
+            shift: shiftId // or you can format this however you want
           });
         }
       }
