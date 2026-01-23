@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -196,30 +196,6 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
-
-        .status {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-size: 12px;
-            font-weight: bold;
-            margin-top: 10px;
-        }
-
-        .status.pending {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-
-        .status.approved {
-            background-color: #d4edda;
-            color: #155724;
-        }
-
-        .status.declined {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
     </style>
 </head>
 <body>
@@ -251,9 +227,9 @@
         </div>
 
         <div class="tabs">
-            <button id="shiftsTab" onclick="">📋 My Shifts</button>
-            <button id="calendarTab" onclick="">📅 Roster Calendar</button>
-            <button id="inboxTab" onclick="">📬 Inbox</button>
+            <button id="shiftsTab">📋 My Shifts</button>
+            <button id="calendarTab">📅 Roster Calendar</button>
+            <button id="inboxTab">📬 Inbox</button>
         </div>
 
         <!-- SHIFTS SECTION -->
@@ -281,6 +257,19 @@
     </div>
 
     <script>
+        // Initialize Firebase - Update with your config
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        firebase.initializeApp(firebaseConfig);
+
         const db = firebase.database();
         let currentStaff = null;
         let allSchedules = {};
@@ -613,6 +602,13 @@
           return violations;
         }
 
+        function validateExtraShiftRules(staffName, dateStr, shiftId) {
+          const simulatedSchedule = JSON.parse(JSON.stringify(allSchedules));
+          if (!simulatedSchedule[dateStr]) simulatedSchedule[dateStr] = {};
+          simulatedSchedule[dateStr][shiftId] = staffName;
+          return validateScheduleForStaff(staffName, simulatedSchedule);
+        }
+
         function validateShiftRulesForSpecificShifts(staffName, schedule, targetDates) {
           const violations = [];
           const shiftTypes = ['paraDay', 'nurseDay', 'paraNight', 'nurseNight'];
@@ -663,13 +659,6 @@
           }
           
           return violations;
-        }
-
-        function validateExtraShiftRules(staffName, dateStr, shiftId) {
-          const simulatedSchedule = JSON.parse(JSON.stringify(allSchedules));
-          if (!simulatedSchedule[dateStr]) simulatedSchedule[dateStr] = {};
-          simulatedSchedule[dateStr][shiftId] = staffName;
-          return validateScheduleForStaff(staffName, simulatedSchedule);
         }
 
         // ==================== RENDER FUNCTIONS ====================
@@ -1395,21 +1384,6 @@
               alert('❌ Error approving trade. Please try again.');
             });
         }
-    </script>
-
-    <script>
-      // Initialize Firebase - Update with your config
-      const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        databaseURL: "YOUR_DATABASE_URL",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
-      };
-      
-      firebase.initializeApp(firebaseConfig);
     </script>
 </body>
 </html>
