@@ -337,53 +337,64 @@ function validateScheduleForStaff(staffName, schedule) {
   return violations;
 }
 
-function validateShiftRulesAfterTrade(myStaffName, myOldDate, myOldShiftId, myNewDate, myNewShiftId, theirStaffName, theirOldDate, theirOldShiftId, theirNewDate, theirNewShiftId) {
+function validateShiftRulesForSpecificShifts(staffName, schedule, targetDates) {
   /**
-   * Validates the schedule AFTER the trade is executed.
-   * We simulate the trade and check if the resulting schedule is valid.
+   * Validates ONLY the shifts on specific dates, ignoring other shifts
+   * This prevents false positives from unrelated shifts
    */
-  
-  // Create a copy of the schedule to simulate the trade
-  const simulatedSchedule = JSON.parse(JSON.stringify(allSchedules));
-  
-  // Step 1: Remove BOTH old shifts
-  if (simulatedSchedule[myOldDate] && simulatedSchedule[myOldDate][myOldShiftId]) {
-    simulatedSchedule[myOldDate][myOldShiftId] = null;
-  }
-  
-  if (simulatedSchedule[theirOldDate] && simulatedSchedule[theirOldDate][theirOldShiftId]) {
-    simulatedSchedule[theirOldDate][theirOldShiftId] = null;
-  }
-  
-  // Step 2: Add NEW shifts (swapped)
-  if (!simulatedSchedule[myNewDate]) simulatedSchedule[myNewDate] = {};
-  simulatedSchedule[myNewDate][myNewShiftId] = myStaffName;
-  
-  if (!simulatedSchedule[theirNewDate]) simulatedSchedule[theirNewDate] = {};
-  simulatedSchedule[theirNewDate][theirNewShiftId] = theirStaffName;
-  
-  // Step 3: Validate both staff
   const violations = [];
+  const shiftTypes = ['paraDay', 'nurseDay', 'paraNight', 'nurseNight'];
   
-  const myViolations = validateScheduleForStaff(myStaffName, simulatedSchedule);
-  violations.push(...myViolations);
+  // Find shifts for this staff ONLY on the target dates
+  const staffShifts = [];
+  for (const dateStr of targetDates) {
+    const dayData = schedule[dateStr];
+    if (!dayData || typeof dayData !== 'object') continue;
+    for (const shiftId of shiftTypes) {
+      if (dayData[shiftId] === staffName) {
+        staffShifts.push({ date: dateStr, shiftId: shiftId });
+      }
+    }
+  }
   
-  const theirViolations = validateScheduleForStaff(theirStaffName, simulatedSchedule);
-  violations.push(...theirViolations);
+  staffShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
+  
+  console.log(`Validating ${staffName} on specific dates:`, staffShifts);
+  
+  // Check rules ONLY for these shifts and their immediate neighbors
+  for (let i = 0; i < staffShifts.length; i++) {
+    const current = staffShifts[i];
+    
+    if (isNightShift(current.shiftId)) {
+      const nextDay = addDays(current.date, 1);
+      const hasNextDayShift = staffShifts.some(shift => shift.date === nextDay);
+      if (hasNextDayShift) {
+        violations.push(`Cannot work night shift on ${current.date} and then work on ${nextDay}`);
+        return violations;
+      }
+    }
+    
+    if (isDayShift(current.shiftId)) {
+      const hasSameDayNight = staffShifts.some(shift => 
+        shift.date === current.date && isNightShift(shift.shiftId)
+      );
+      if (hasSameDayNight) {
+        violations.push(`Cannot work day shift and night shift on same day ${current.date}`);
+        return violations;
+      }
+      
+      const prevDay = subtractDays(current.date, 1);
+      const hasPrevDayNight = staffShifts.some(shift => 
+        shift.date === prevDay && isNightShift(shift.shiftId)
+      );
+      if (hasPrevDayNight) {
+        violations.push(`Cannot work night shift on ${prevDay} and then day shift on ${current.date}`);
+        return violations;
+      }
+    }
+  }
   
   return violations;
-}
-
-function validateExtraShiftRules(staffName, newDate, newShiftId) {
-  /**
-   * Validates extra shift request - simulates adding the shift and checks rules
-   */
-  const simulatedSchedule = JSON.parse(JSON.stringify(allSchedules));
-  
-  if (!simulatedSchedule[newDate]) simulatedSchedule[newDate] = {};
-  simulatedSchedule[newDate][newShiftId] = staffName;
-  
-  return validateScheduleForStaff(staffName, simulatedSchedule);
 }
 
 // ==================== RENDER FUNCTIONS ====================
@@ -652,8 +663,13 @@ function initiateTradeFromCalendar(targetDate, targetShiftId, targetStaff, targe
     return;
   }
 
-  // Validate shift rules - check if the RESULTING schedule is valid
-  const violations = validateShiftRulesAfterTrade(myStaff, myDate, myShiftId, targetDate, targetShiftId, targetStaff, targetDate, targetShiftId, myDate, myShiftId);
+  // Validate shift rules - ONLY check the affected dates
+  const affectedDates = [myDate, targetDate];
+  
+  const myViolations = validateShiftRulesForSpecificShifts(myStaff, allSchedules, affectedDates.concat([addDays(targetDate, 1), subtractDays(targetDate, 1)]));
+  const theirViolations = validateShiftRulesForSpecificShifts(targetStaff, allSchedules, affectedDates.concat([addDays(myDate, 1), subtractDays(myDate, 1)]));
+  
+  const violations = [...myViolations, ...theirViolations];
 
   if (violations.length > 0) {
     const violationMessage = violations.join('\n') + '\n\n❌ This trade violates shift scheduling rules and cannot be approved.';
