@@ -80,7 +80,7 @@
   <div class="container">
     <header class="app-header">
       <h1>STAR 1 Shift Trade Portal</h1>
-      <p>Phase 1: Request Trades (Read-Only Schedule)</p>
+      <p>Request, Approve & Manage Shift Trades</p>
     </header>
 
     <section class="staff-selection">
@@ -115,6 +115,7 @@
     <div class="tab-buttons">
       <button id="shiftsTab" class="tab-btn" style="border-bottom: 3px solid #2d8a8c;">My Shifts</button>
       <button id="calendarTab" class="tab-btn">Calendar View</button>
+      <button id="inboxTab" class="tab-btn">📬 Trade Inbox</button>
     </div>
 
     <!-- Shifts List View -->
@@ -135,6 +136,12 @@
         <strong>Legend:</strong> 🚑 = Paramedic | ⚕️ = Nurse | 🌙 = Night Shift | 
         <span style="background-color: #90EE90; padding: 2px 6px; border-radius: 3px;">Green = Your Shift</span>
       </p>
+    </section>
+
+    <!-- Trade Inbox -->
+    <section id="inboxSection" style="display:none;">
+      <h2>Trade Requests</h2>
+      <div id="inboxList"></div>
     </section>
   </div>
 
