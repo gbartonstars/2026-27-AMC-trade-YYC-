@@ -162,7 +162,7 @@ function renderStaffsShifts() {
       <h3 style="margin-top: 0;">${dateFormatted}</h3>
       <p><strong>Shift:</strong> ${shift.shiftLabel}</p>
       <p><strong>Date:</strong> ${shift.date}</p>
-      <button onclick="openTradeModal('${shift.date}', '${shift.shiftId}', '${shift.shiftLabel}')" style="padding: 8px 16px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+      <button onclick="startTradeWizard('${shift.date}', '${shift.shiftId}', '${shift.shiftLabel}')" style="padding: 8px 16px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
         Request Trade
       </button>
     `;
@@ -250,9 +250,9 @@ function renderRosterCalendar() {
 
           shiftDiv.innerHTML = `<strong>${shift.icon}</strong> ${staffName}`;
           
-          // Allow clicking on any shift to request trade
+          // Allow clicking on any shift to start trade wizard
           shiftDiv.addEventListener('click', () => {
-            openTradeModal(dateStr, shift.key, shift.label);
+            startTradeWizard(dateStr, shift.key, shift.label);
           });
 
           dayCell.appendChild(shiftDiv);
@@ -271,32 +271,36 @@ function renderRosterCalendar() {
   document.getElementById('calendarSection').style.display = 'block';
 }
 
-function openTradeModal(fromDate, fromShiftId, fromShiftLabel) {
-  console.log(`Opening trade modal for ${fromDate} ${fromShiftId}`);
+function startTradeWizard(selectedDate, selectedShiftId, selectedShiftLabel) {
+  console.log(`Starting trade wizard: ${selectedDate} ${selectedShiftId}`);
   
-  // Get the staff member on that shift
-  const dayData = allSchedules[fromDate];
-  if (!dayData || !dayData[fromShiftId]) {
-    alert('Error: Could not find shift data');
+  const dayData = allSchedules[selectedDate];
+  if (!dayData) {
+    alert('Error: No data for selected date');
     return;
   }
 
-  const targetStaff = dayData[fromShiftId];
+  const selectedStaff = dayData[selectedShiftId];
   
   // Check role compatibility
   const currentRole = getStaffRole(currentStaff);
-  const targetRole = getStaffRole(targetStaff);
+  const selectedRole = getStaffRole(selectedStaff);
 
-  if (currentRole !== targetRole) {
-    alert(`❌ You can only trade with other ${currentRole === 'paramedic' ? 'Paramedics' : 'Nurses'}.\n\n${targetStaff} is a ${targetRole === 'paramedic' ? 'Paramedic' : 'Nurse'}.`);
+  if (currentRole !== selectedRole) {
+    alert(`❌ You can only trade with other ${currentRole === 'paramedic' ? 'Paramedics' : 'Nurses'}.\n\n${selectedStaff} is a ${selectedRole === 'paramedic' ? 'Paramedic' : 'Nurse'}.`);
     return;
   }
 
-  if (targetStaff === currentStaff) {
+  if (selectedStaff === currentStaff) {
     alert('You cannot trade with yourself!');
     return;
   }
-  
+
+  // Open modal to select YOUR shift
+  openSelectYourShiftModal(selectedDate, selectedShiftId, selectedStaff, selectedShiftLabel);
+}
+
+function openSelectYourShiftModal(targetDate, targetShiftId, targetStaff, targetShiftLabel) {
   const modal = document.createElement('div');
   modal.id = 'tradeModal';
   modal.style.cssText = `
@@ -321,12 +325,116 @@ function openTradeModal(fromDate, fromShiftId, fromShiftLabel) {
     width: 90%;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
   `;
-  
+
+  // Get current staff's shifts
+  const myShifts = [];
+  for (const [dateStr, dayData] of Object.entries(allSchedules)) {
+    if (!dayData || typeof dayData !== 'object') continue;
+    
+    const shiftTypes = [
+      { key: 'paraDay', label: 'Paramedic - Day' },
+      { key: 'nurseDay', label: 'Nurse - Day' },
+      { key: 'paraNight', label: 'Paramedic - Night' },
+      { key: 'nurseNight', label: 'Nurse - Night' }
+    ];
+    
+    shiftTypes.forEach(shift => {
+      if (dayData[shift.key] === currentStaff) {
+        myShifts.push({
+          date: dateStr,
+          shiftId: shift.key,
+          shiftLabel: shift.label
+        });
+      }
+    });
+  }
+
+  let shiftsOptionsHTML = '<option value="">-- Select YOUR shift to trade --</option>';
+  myShifts.forEach(shift => {
+    const d = new Date(shift.date + 'T00:00:00');
+    shiftsOptionsHTML += `<option value="${shift.date}|${shift.shiftId}">${shift.shiftLabel} on ${d.toDateString()}</option>`;
+  });
+
   modalContent.innerHTML = `
-    <h2>Request Trade</h2>
-    <p><strong>Your Shift:</strong> ${fromShiftLabel} on ${fromDate}</p>
-    <p><strong>Trade with:</strong> ${targetStaff}</p>
-    <div style="margin-bottom: 15px; margin-top: 20px;">
+    <h2>Step 1: Select YOUR Shift</h2>
+    <p>You want <strong>${targetStaff}</strong>'s <strong>${targetShiftLabel}</strong> on <strong>${targetDate}</strong></p>
+    <p>Which of YOUR shifts would you like to trade?</p>
+    <select id="myShiftSelect" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 1px solid #ccc; border-radius: 4px;">
+      ${shiftsOptionsHTML}
+    </select>
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button onclick="closeModal()" style="padding: 10px 20px; background-color: #999; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Cancel
+      </button>
+      <button onclick="proceedToReasonStep('${targetDate}', '${targetShiftId}', '${targetStaff}', '${targetShiftLabel}')" style="padding: 10px 20px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+        Next Step →
+      </button>
+    </div>
+  `;
+  
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+}
+
+function proceedToReasonStep(targetDate, targetShiftId, targetStaff, targetShiftLabel) {
+  const myShiftSelect = document.getElementById('myShiftSelect').value;
+  
+  if (!myShiftSelect) {
+    alert('Please select your shift');
+    return;
+  }
+
+  const [myDate, myShiftId] = myShiftSelect.split('|');
+  
+  closeModal();
+  openTradeReasonModal(myDate, myShiftId, currentStaff, targetDate, targetShiftId, targetStaff);
+}
+
+function openTradeReasonModal(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff) {
+  const modal = document.createElement('div');
+  modal.id = 'tradeModal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  `;
+  
+  const modalContent = document.createElement('div');
+  modalContent.style.cssText = `
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  `;
+
+  const myShiftLabel = getShiftLabelFromId(myShiftId);
+  const targetShiftLabel = getShiftLabelFromId(targetShiftId);
+  const d1 = new Date(myDate + 'T00:00:00');
+  const d2 = new Date(targetDate + 'T00:00:00');
+
+  modalContent.innerHTML = `
+    <h2>Step 2: Confirm Trade Details</h2>
+    <div style="background-color: #f0f0f0; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+      <p><strong>YOU give:</strong> ${myShiftLabel} on ${d1.toDateString()}</p>
+      <p><strong>YOU receive:</strong> ${targetShiftLabel} on ${d2.toDateString()}</p>
+      <p><strong>Trading with:</strong> ${targetStaff}</p>
+    </div>
+    <div style="margin-bottom: 15px;">
       <label><strong>Trade Reason (optional):</strong></label>
       <textarea id="tradeReason" style="width: 100%; padding: 8px; height: 80px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
     </div>
@@ -334,7 +442,7 @@ function openTradeModal(fromDate, fromShiftId, fromShiftLabel) {
       <button onclick="closeModal()" style="padding: 10px 20px; background-color: #999; color: white; border: none; border-radius: 4px; cursor: pointer;">
         Cancel
       </button>
-      <button onclick="submitTrade('${fromDate}', '${fromShiftId}', '${currentStaff}', '${targetStaff}')" style="padding: 10px 20px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+      <button onclick="submitTrade('${myDate}', '${myShiftId}', '${myStaff}', '${targetDate}', '${targetShiftId}', '${targetStaff}')" style="padding: 10px 20px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
         Submit Trade Request
       </button>
     </div>
@@ -343,12 +451,21 @@ function openTradeModal(fromDate, fromShiftId, fromShiftLabel) {
   modal.appendChild(modalContent);
   document.body.appendChild(modal);
   
-  // Close modal on outside click
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       closeModal();
     }
   });
+}
+
+function getShiftLabelFromId(shiftId) {
+  const labels = {
+    'paraDay': 'Paramedic - Day',
+    'nurseDay': 'Nurse - Day',
+    'paraNight': 'Paramedic - Night',
+    'nurseNight': 'Nurse - Night'
+  };
+  return labels[shiftId] || shiftId;
 }
 
 function closeModal() {
@@ -358,47 +475,34 @@ function closeModal() {
   }
 }
 
-function submitTrade(fromDate, fromShiftId, fromStaffName, toStaffName) {
+function submitTrade(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff) {
   const tradeReason = document.getElementById('tradeReason').value;
-  
-  // Find what shift the trade partner has on that date
-  const dayData = allSchedules[fromDate];
-  let toShiftId = null;
-  
-  for (const [shiftKey, staffName] of Object.entries(dayData)) {
-    if (staffName === toStaffName) {
-      toShiftId = shiftKey;
-      break;
-    }
-  }
-  
-  if (!toShiftId) {
-    alert('Error: Could not find trade partner shift');
-    return;
-  }
   
   // Create trade request object
   const tradeRequest = {
-    fromStaff: fromStaffName,
-    fromDate: fromDate,
-    fromShift: fromShiftId,
-    toStaff: toStaffName,
-    toDate: fromDate,
-    toShift: toShiftId,
+    fromStaff: myStaff,
+    fromDate: myDate,
+    fromShift: myShiftId,
+    toStaff: targetStaff,
+    toDate: targetDate,
+    toShift: targetShiftId,
     reason: tradeReason || 'No reason provided',
     status: 'pending',
     createdAt: new Date().toISOString(),
-    createdBy: fromStaffName
+    createdBy: myStaff
   };
   
   console.log('Submitting trade request:', tradeRequest);
   
   // Save to Firebase
-  const tradeId = `${fromStaffName}_${fromDate}_${Date.now()}`;
+  const tradeId = `${myStaff}_${myDate}_${Date.now()}`;
   db.ref(`tradeRequests/${tradeId}`).set(tradeRequest)
     .then(() => {
-      alert(`✅ Trade request submitted!\n\n${toStaffName} will be notified.`);
+      alert(`✅ Trade request submitted!\n\n${targetStaff} will need to accept or decline.`);
       closeModal();
+      // Reload shifts to refresh view
+      renderStaffsShifts();
+      renderRosterCalendar();
     })
     .catch((error) => {
       console.error('Error submitting trade:', error);
