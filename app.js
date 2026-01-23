@@ -1,50 +1,67 @@
 const db = firebase.database();
-const STAFF_LIST = [
-  "Greg Barton", "Scott McTaggart", "Dave Allison", "Mackenzie Wardle", "Chad Hegge", "Ken King", "John Doyle", "Bob Odney",
-  "Graham Newton", "Stuart Grant", "Kellie Ann Vogelaar", "Michelle Sexsmith", "Carolyn Hogan", "Kris Austin", "Flo Butler", "Jodi Scott", "Janice Kirkham"
-];
-
 let currentStaff = null;
 let allSchedules = {};
 
-// ===== INIT =====
-document.getElementById('staffSelect').addEventListener('change', onStaffSelected);
-loadAllSchedules();
+// Load data when page loads
+window.addEventListener('DOMContentLoaded', () => {
+  console.log('Page loaded, initializing...');
+  loadAllSchedules();
+  setupEventListeners();
+});
 
-// ===== LOAD SCHEDULE DATA =====
-function loadAllSchedules() {
-  db.ref('generatedRoster').on('value', (snapshot) => {
-    allSchedules = snapshot.val() || {};
-    console.log('Loaded roster:', allSchedules);
-    if (currentStaff) {
-      renderStaffsShifts();
+function setupEventListeners() {
+  const staffSelect = document.getElementById('staffSelect');
+  staffSelect.addEventListener('change', (e) => {
+    const selectedName = e.target.value;
+    console.log('Dropdown changed to:', selectedName);
+    
+    if (!selectedName) {
+      document.getElementById('shiftsSection').style.display = 'none';
+      currentStaff = null;
+      return;
     }
+    
+    currentStaff = selectedName;
+    renderStaffsShifts();
   });
 }
 
-// ===== STAFF SELECTION =====
+function loadAllSchedules() {
+  console.log('Loading roster from Firebase...');
+  db.ref('generatedRoster').once('value', (snapshot) => {
+    allSchedules = snapshot.val() || {};
+    console.log('Roster loaded. Data keys:', Object.keys(allSchedules).slice(0, 5));
+    if (currentStaff) {
+      renderStaffsShifts();
+    }
+  }, (error) => {
+    console.error('Error loading roster:', error);
+  });
+}
+
 function renderStaffsShifts() {
+  console.log('Rendering shifts for:', currentStaff);
+  
   if (!currentStaff) return;
 
   const shiftsSection = document.getElementById('shiftsSection');
   const shiftsTitle = document.getElementById('shiftsTitle');
   const shiftsList = document.getElementById('shiftsList');
 
-  shiftsTitle.textContent = `${currentStaff}'s Assigned Shifts (Next 12 Months)`;
+  shiftsTitle.textContent = `${currentStaff}'s Assigned Shifts`;
   shiftsList.innerHTML = '';
 
   const staffShifts = [];
   
-  // allSchedules structure: "2026-04-04" → { paraDay: "name", nurseDay: "name", ... }
+  // Loop through all dates and find shifts for this person
   for (const [dateStr, dayData] of Object.entries(allSchedules)) {
     if (!dayData || typeof dayData !== 'object') continue;
     
-    // Check each shift type
     const shiftTypes = [
-      { key: 'paraDay', label: 'Para Day' },
-      { key: 'nurseDay', label: 'Nurse Day' },
-      { key: 'paraNight', label: 'Para Night' },
-      { key: 'nurseNight', label: 'Nurse Night' }
+      { key: 'paraDay', label: 'Paramedic - Day' },
+      { key: 'nurseDay', label: 'Nurse - Day' },
+      { key: 'paraNight', label: 'Paramedic - Night' },
+      { key: 'nurseNight', label: 'Nurse - Night' }
     ];
     
     shiftTypes.forEach(shift => {
@@ -58,8 +75,11 @@ function renderStaffsShifts() {
     });
   }
 
+  console.log(`Found ${staffShifts.length} shifts for ${currentStaff}`);
+
   if (staffShifts.length === 0) {
-    shiftsList.innerHTML = '<p style="color: #999;">No shifts assigned in the generated roster.</p>';
+    shiftsList.innerHTML = '<p style="color: #999;">No shifts assigned in the roster.</p>';
+    shiftsSection.style.display = 'block';
     return;
   }
 
@@ -72,91 +92,22 @@ function renderStaffsShifts() {
     
     const card = document.createElement('div');
     card.className = 'shift-card';
+    card.style.padding = '15px';
+    card.style.marginBottom = '10px';
+    card.style.backgroundColor = '#f9f9f9';
+    card.style.border = '1px solid #ddd';
+    card.style.borderRadius = '5px';
+    
     card.innerHTML = `
-      <h3>${dateFormatted}</h3>
-      <div class="shift-details">
-        <strong>Shift:</strong> ${shift.shiftLabel}<br>
-        <strong>Date:</strong> ${shift.date}
-      </div>
-      <button onclick="initiateTradeRequest('${shift.date}', '${shift.shiftId}')">Request Trade</button>
+      <h3 style="margin-top: 0;">${dateFormatted}</h3>
+      <p><strong>Shift:</strong> ${shift.shiftLabel}</p>
+      <p><strong>Date:</strong> ${shift.date}</p>
+      <button onclick="alert('Trade request feature coming soon for: ${shift.date} - ${shift.shiftLabel}')">
+        Request Trade
+      </button>
     `;
     shiftsList.appendChild(card);
   });
-}
 
-// ===== INITIATE TRADE REQUEST =====
-function initiateTradeRequest(date, shiftId) {
-  const tradePartner = prompt('Who do you want to trade with? (Enter staff name)');
-  if (!tradePartner || tradePartner.trim() === '') return;
-  
-  if (!STAFF_LIST.includes(tradePartner)) {
-    alert('Staff member not found. Please check the name.');
-    return;
-  }
-
-  const tradeId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  const tradeRequest = {
-    id: tradeId,
-    fromUser: currentStaff,
-    toUser: tradePartner,
-    date: date,
-    fromShiftId: shiftId,
-    status: 'pending',
-    createdAt: Date.now(),
-    createdBy: currentStaff
-  };
-
-  db.ref(`tradeRequests/${tradeId}`).set(tradeRequest, (error) => {
-    if (error) {
-      alert('Error creating trade request: ' + error.message);
-    } else {
-      alert(`Trade request sent to ${tradePartner}!`);
-      loadTradeRequests();
-    }
-  });
-}
-
-// ===== LOAD & DISPLAY TRADE REQUESTS =====
-function loadTradeRequests() {
-  if (!currentStaff) return;
-
-  db.ref('tradeRequests').once('value', (snapshot) => {
-    const trades = snapshot.val() || {};
-    const myTrades = [];
-
-    for (const [tradeId, trade] of Object.entries(trades)) {
-      if (trade.fromUser === currentStaff || trade.toUser === currentStaff) {
-        myTrades.push(trade);
-      }
-    }
-
-    renderTradeRequests(myTrades);
-  });
-}
-
-function renderTradeRequests(trades) {
-  const tradesList = document.getElementById('tradeRequestsList');
-  tradesList.innerHTML = '';
-
-  if (trades.length === 0) {
-    tradesList.innerHTML = '<p style="color: #999;">No trade requests yet.</p>';
-    return;
-  }
-
-  trades.forEach((trade) => {
-    const isFromMe = trade.fromUser === currentStaff;
-    const otherPerson = isFromMe ? trade.toUser : trade.fromUser;
-    const directionText = isFromMe ? `Requesting trade with ${otherPerson}` : `${otherPerson} requested to trade with you`;
-
-    const card = document.createElement('div');
-    card.className = `trade-card ${trade.status}`;
-    card.innerHTML = `
-      <h4>${directionText}</h4>
-      <p><strong>Date:</strong> ${trade.date}</p>
-      <p><strong>Shift ID:</strong> ${trade.fromShiftId}</p>
-      <p><strong>Created:</strong> ${new Date(trade.createdAt).toLocaleDateString()}</p>
-      <span class="status-badge ${trade.status}">${trade.status.toUpperCase()}</span>
-    `;
-    tradesList.appendChild(card);
-  });
+  shiftsSection.style.display = 'block';
 }
