@@ -13,8 +13,9 @@ loadAllSchedules();
 
 // ===== LOAD SCHEDULE DATA =====
 function loadAllSchedules() {
-  db.ref('scheduleData').once('value', (snapshot) => {
+  db.ref('generatedRoster').on('value', (snapshot) => {
     allSchedules = snapshot.val() || {};
+    console.log('Loaded roster:', allSchedules);
     if (currentStaff) {
       renderStaffsShifts();
     }
@@ -29,40 +30,53 @@ function renderStaffsShifts() {
   const shiftsTitle = document.getElementById('shiftsTitle');
   const shiftsList = document.getElementById('shiftsList');
 
-  shiftsTitle.textContent = `${currentStaff}'s Assigned Shifts (Next 6 Months)`;
+  shiftsTitle.textContent = `${currentStaff}'s Assigned Shifts (Next 12 Months)`;
   shiftsList.innerHTML = '';
 
   const staffShifts = [];
   
-  // allSchedules is keyed by date (e.g., "2026-04-01")
-  for (const [date, dayData] of Object.entries(allSchedules)) {
-    if (dayData && typeof dayData === 'object') {
-      // dayData has structure like: { "AMC-1": "Greg Barton", "AMC-2": "Scott McTaggart" }
-      for (const [shiftId, staffName] of Object.entries(dayData)) {
-        if (staffName === currentStaff) {
-          staffShifts.push({
-            date,
-            shiftId,
-            shift: shiftId // or you can format this however you want
-          });
-        }
+  // allSchedules structure: "2026-04-04" → { paraDay: "name", nurseDay: "name", ... }
+  for (const [dateStr, dayData] of Object.entries(allSchedules)) {
+    if (!dayData || typeof dayData !== 'object') continue;
+    
+    // Check each shift type
+    const shiftTypes = [
+      { key: 'paraDay', label: 'Para Day' },
+      { key: 'nurseDay', label: 'Nurse Day' },
+      { key: 'paraNight', label: 'Para Night' },
+      { key: 'nurseNight', label: 'Nurse Night' }
+    ];
+    
+    shiftTypes.forEach(shift => {
+      if (dayData[shift.key] === currentStaff) {
+        staffShifts.push({
+          date: dateStr,
+          shiftId: shift.key,
+          shiftLabel: shift.label
+        });
       }
-    }
+    });
   }
 
   if (staffShifts.length === 0) {
-    shiftsList.innerHTML = '<p style="color: #999;">No shifts found for this staff member.</p>';
+    shiftsList.innerHTML = '<p style="color: #999;">No shifts assigned in the generated roster.</p>';
     return;
   }
 
+  // Sort by date
+  staffShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
+
   staffShifts.forEach((shift) => {
+    const d = new Date(shift.date + 'T00:00:00');
+    const dateFormatted = d.toDateString();
+    
     const card = document.createElement('div');
     card.className = 'shift-card';
     card.innerHTML = `
-      <h3>${shift.date}</h3>
+      <h3>${dateFormatted}</h3>
       <div class="shift-details">
-        <strong>Shift:</strong> ${shift.shift}<br>
-        <strong>Shift ID:</strong> ${shift.shiftId}
+        <strong>Shift:</strong> ${shift.shiftLabel}<br>
+        <strong>Date:</strong> ${shift.date}
       </div>
       <button onclick="initiateTradeRequest('${shift.date}', '${shift.shiftId}')">Request Trade</button>
     `;
