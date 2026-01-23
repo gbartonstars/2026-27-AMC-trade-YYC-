@@ -2,6 +2,7 @@ const db = firebase.database();
 let currentStaff = null;
 let allSchedules = {};
 let tradeRequests = {};
+let extraShiftRequests = {};
 let isLoggedIn = false;
 
 // Staff categorization
@@ -107,11 +108,12 @@ function handleLogin() {
   
   // Set staff select dropdown and load data
   document.getElementById('staffSelect').value = currentStaff;
-  document.getElementById('staffSelect').disabled = true; // Can't change after login
+  document.getElementById('staffSelect').disabled = true;
   
   // Load all data
   loadAllSchedules();
   loadTradeRequests();
+  loadExtraShiftRequests();
   setupEventListeners();
   
   // Initialize the view
@@ -140,7 +142,6 @@ function handleLogout() {
 // ==================== MAIN APP ====================
 
 function setupEventListeners() {
-  // Tab switching
   const shiftsTab = document.getElementById('shiftsTab');
   const calendarTab = document.getElementById('calendarTab');
   const inboxTab = document.getElementById('inboxTab');
@@ -182,7 +183,6 @@ function setupEventListeners() {
     });
   }
 
-  // Calendar navigation
   const prevMonth = document.getElementById('prevMonth');
   const nextMonth = document.getElementById('nextMonth');
   
@@ -225,6 +225,19 @@ function loadTradeRequests() {
     }
   }, (error) => {
     console.error('Error loading trade requests:', error);
+  });
+}
+
+function loadExtraShiftRequests() {
+  console.log('Loading extra shift requests...');
+  db.ref('extraShiftRequests').on('value', (snapshot) => {
+    extraShiftRequests = snapshot.val() || {};
+    console.log('Extra shift requests loaded');
+    if (currentStaff) {
+      renderRosterCalendar();
+    }
+  }, (error) => {
+    console.error('Error loading extra shift requests:', error);
   });
 }
 
@@ -295,7 +308,7 @@ function renderStaffsShifts() {
       <h3 style="margin-top: 0;">${dateFormatted}</h3>
       <p><strong>Shift:</strong> ${shift.shiftLabel}</p>
       <p><strong>Date:</strong> ${shift.date}</p>
-      <button onclick="openCalendarToSelectTrade('${shift.date}', '${shift.shiftId}', '${shift.shiftLabel}')" style="padding: 8px 16px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+      <button onclick="selectTradeShiftInCalendar('${shift.date}', '${shift.shiftId}', '${shift.shiftLabel}')" style="padding: 8px 16px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
         Request Trade
       </button>
     `;
@@ -305,7 +318,7 @@ function renderStaffsShifts() {
   shiftsSection.style.display = 'block';
 }
 
-function openCalendarToSelectTrade(myDate, myShiftId, myShiftLabel) {
+function selectTradeShiftInCalendar(myDate, myShiftId, myShiftLabel) {
   // Store the shift they want to trade
   selectedTradeShift = {
     date: myDate,
@@ -425,15 +438,40 @@ function renderRosterCalendar() {
 
           shiftDiv.innerHTML = `<strong>${shift.icon}</strong> ${staffName}`;
           
-          // Allow clicking on any shift to initiate trade (but not your own shift or the same shift)
-          if (!(staffName === currentStaff && dateStr === selectedTradeShift?.date)) {
-            shiftDiv.addEventListener('click', () => {
+          // Click handler for trade
+          shiftDiv.addEventListener('click', () => {
+            if (selectedTradeShift && dateStr === selectedTradeShift.date && shift.key === selectedTradeShift.shiftId) {
+              // Clicking your own selected shift - deselect it
+              selectedTradeShift = null;
+              renderRosterCalendar();
+            } else if (!selectedTradeShift) {
+              // No shift selected yet - select this one if it's yours
+              if (staffName === currentStaff) {
+                selectTradeShiftInCalendar(dateStr, shift.key, shift.label);
+              }
+            } else {
+              // A shift is selected - initiate trade with this shift
               initiateTradeFromCalendar(dateStr, shift.key, staffName, shift.label);
-            });
-            shiftDiv.style.cursor = 'pointer';
-          }
+            }
+          });
 
           dayCell.appendChild(shiftDiv);
+        } else {
+          // Empty shift slot
+          const emptyShiftDiv = document.createElement('div');
+          emptyShiftDiv.style.cssText = 'font-size: 11px; margin-bottom: 3px; padding: 3px 5px; background-color: #ff6b6b; border-radius: 3px; cursor: pointer; transition: all 0.2s; font-weight: bold; color: white;';
+          
+          const shiftLabel = shift.label;
+          emptyShiftDiv.innerHTML = `<strong>${shift.icon}</strong> OPEN`;
+          
+          emptyShiftDiv.addEventListener('mouseenter', () => emptyShiftDiv.style.backgroundColor = '#ff5252');
+          emptyShiftDiv.addEventListener('mouseleave', () => emptyShiftDiv.style.backgroundColor = '#ff6b6b');
+          
+          emptyShiftDiv.addEventListener('click', () => {
+            requestExtraShift(dateStr, shift.key, shiftLabel);
+          });
+
+          dayCell.appendChild(emptyShiftDiv);
         }
       });
     } else {
@@ -480,6 +518,107 @@ function initiateTradeFromCalendar(targetDate, targetShiftId, targetStaff, targe
 
   // Open the confirmation modal
   openTradeConfirmationModal(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff, targetShiftLabel);
+}
+
+function requestExtraShift(dateStr, shiftId, shiftLabel) {
+  const currentRole = getStaffRole(currentStaff);
+  const shiftIsForRole = (shiftId.includes('para')) ? 'paramedic' : 'nurse';
+  
+  if (currentRole !== shiftIsForRole) {
+    alert(`❌ You can only request shifts for your role.\n\nThis is a ${shiftIsForRole === 'paramedic' ? 'Paramedic' : 'Nurse'} shift.`);
+    return;
+  }
+
+  const modal = document.createElement('div');
+  modal.id = 'extraShiftModal';
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  `;
+  
+  const modalContent = document.createElement('div');
+  modalContent.style.cssText = `
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+  `;
+
+  const d = new Date(dateStr + 'T00:00:00');
+
+  modalContent.innerHTML = `
+    <h2>Request Extra Shift</h2>
+    <div style="background-color: #d4edda; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+      <p><strong>Shift:</strong> ${shiftLabel}</p>
+      <p><strong>Date:</strong> ${d.toDateString()}</p>
+      <p style="color: #666; font-size: 12px;">An admin will need to approve this request</p>
+    </div>
+    <div style="margin-bottom: 15px;">
+      <label><strong>Reason for requesting this shift:</strong></label>
+      <textarea id="extraShiftReason" style="width: 100%; padding: 8px; height: 80px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+    </div>
+    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+      <button onclick="closeExtraShiftModal()" style="padding: 10px 20px; background-color: #999; color: white; border: none; border-radius: 4px; cursor: pointer;">
+        Cancel
+      </button>
+      <button onclick="submitExtraShiftRequest('${dateStr}', '${shiftId}', '${shiftLabel}')" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+        Submit Request
+      </button>
+    </div>
+  `;
+  
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeExtraShiftModal();
+    }
+  });
+}
+
+function closeExtraShiftModal() {
+  const modal = document.getElementById('extraShiftModal');
+  if (modal) {
+    modal.remove();
+  }
+}
+
+function submitExtraShiftRequest(dateStr, shiftId, shiftLabel) {
+  const reason = document.getElementById('extraShiftReason').value || 'No reason provided';
+  
+  const request = {
+    staffName: currentStaff,
+    date: dateStr,
+    shiftId: shiftId,
+    shiftLabel: shiftLabel,
+    reason: reason,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+  
+  const requestId = `${currentStaff}_${dateStr}_${shiftId}_${Date.now()}`;
+  
+  db.ref(`extraShiftRequests/${requestId}`).set(request)
+    .then(() => {
+      alert(`✅ Extra shift request submitted!\n\nAdmins will review and approve shortly.`);
+      closeExtraShiftModal();
+      renderRosterCalendar();
+    })
+    .catch((error) => {
+      console.error('Error submitting extra shift request:', error);
+      alert('❌ Error submitting request. Please try again.');
+    });
 }
 
 function openTradeConfirmationModal(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff, targetShiftLabel) {
@@ -569,8 +708,39 @@ function renderTradeInbox() {
 
   let html = '';
 
+  // Extra shift requests section (for admins)
+  if (ADMINS.includes(currentStaff)) {
+    let pendingExtraShifts = [];
+    for (const [reqId, req] of Object.entries(extraShiftRequests)) {
+      if (req.status === 'pending') {
+        pendingExtraShifts.push({ id: reqId, ...req });
+      }
+    }
+
+    if (pendingExtraShifts.length > 0) {
+      html += '<h3 style="color: #28a745;">📋 Extra Shift Requests (Admin)</h3>';
+      pendingExtraShifts.forEach(req => {
+        const d = new Date(req.date + 'T00:00:00');
+        html += `
+          <div style="background-color: #fff3cd; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #ffc107;">
+            <p><strong>${req.staffName}</strong> requesting <strong>${req.shiftLabel}</strong> on <strong>${d.toDateString()}</strong></p>
+            <p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${req.reason}</p>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+              <button onclick="approveExtraShift('${req.id}', '${req.date}', '${req.shiftId}', '${req.staffName}')" style="padding: 8px 16px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                ✓ Approve
+              </button>
+              <button onclick="denyExtraShift('${req.id}')" style="padding: 8px 16px; background-color: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                ✗ Deny
+              </button>
+            </div>
+          </div>
+        `;
+      });
+    }
+  }
+
   if (myPendingRequests.length > 0) {
-    html += '<h3>Requests Awaiting Response</h3>';
+    html += '<h3 style="margin-top: 30px;">Requests Awaiting Response</h3>';
     myPendingRequests.forEach(trade => {
       const d1 = new Date(trade.fromDate + 'T00:00:00');
       const d2 = new Date(trade.toDate + 'T00:00:00');
@@ -632,7 +802,7 @@ function renderTradeInbox() {
   }
 
   if (html === '') {
-    html = '<p style="color: #999;">No trade requests.</p>';
+    html = '<p style="color: #999;">No requests at this time.</p>';
   }
 
   inboxList.innerHTML = html;
@@ -727,6 +897,49 @@ function declineTrade(tradeId) {
     .catch((error) => {
       console.error('Error declining trade:', error);
       alert('❌ Error declining trade.');
+    });
+}
+
+function approveExtraShift(requestId, dateStr, shiftId, staffName) {
+  db.ref(`extraShiftRequests/${requestId}`).update({
+    status: 'approved',
+    approvedBy: currentStaff,
+    approvedAt: new Date().toISOString()
+  })
+    .then(() => {
+      // Update roster to assign the shift
+      const dayData = allSchedules[dateStr] || {};
+      dayData[shiftId] = staffName;
+      allSchedules[dateStr] = dayData;
+      return db.ref('generatedRoster').set(allSchedules);
+    })
+    .then(() => {
+      alert(`✅ Extra shift approved and assigned to ${staffName}!`);
+      renderRosterCalendar();
+      renderTradeInbox();
+    })
+    .catch((error) => {
+      console.error('Error approving extra shift:', error);
+      alert('❌ Error approving extra shift. Please try again.');
+    });
+}
+
+function denyExtraShift(requestId) {
+  const reason = prompt('Reason for denying (optional):');
+  
+  db.ref(`extraShiftRequests/${requestId}`).update({
+    status: 'denied',
+    deniedBy: currentStaff,
+    deniedReason: reason || 'No reason provided',
+    deniedAt: new Date().toISOString()
+  })
+    .then(() => {
+      alert('✅ Extra shift request denied.');
+      renderTradeInbox();
+    })
+    .catch((error) => {
+      console.error('Error denying extra shift:', error);
+      alert('❌ Error denying request. Please try again.');
     });
 }
 
