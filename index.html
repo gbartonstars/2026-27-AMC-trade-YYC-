@@ -24,11 +24,215 @@
   </script>
 
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .app-header {
+      background: linear-gradient(135deg, #2d8a8c 0%, #1f5d60 100%);
+      color: white;
+      padding: 30px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .app-header h1 {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .app-header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    /* LOGIN SCREEN */
+    #loginContainer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+    }
+
+    .login-box {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .login-box h1 {
+      text-align: center;
+      color: #2d8a8c;
+      margin-bottom: 10px;
+      font-size: 24px;
+    }
+
+    .login-box p {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .form-group select,
+    .form-group input {
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+      font-family: inherit;
+    }
+
+    .form-group select:focus,
+    .form-group input:focus {
+      outline: none;
+      border-color: #2d8a8c;
+      box-shadow: 0 0 0 3px rgba(45, 138, 140, 0.1);
+    }
+
+    .login-button {
+      padding: 12px;
+      background-color: #2d8a8c;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+
+    .login-button:hover {
+      background-color: #1f5d60;
+    }
+
+    .password-hint {
+      text-align: center;
+      font-size: 12px;
+      color: #999;
+      margin-top: 15px;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 4px;
+    }
+
+    /* MAIN CONTENT */
+    #mainContent {
+      display: none;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background: white;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    #loggedInUser {
+      font-weight: 600;
+      color: #2d8a8c;
+    }
+
+    .logout-btn {
+      padding: 8px 16px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s;
+    }
+
+    .logout-btn:hover {
+      background-color: #c82333;
+    }
+
+    .staff-selection {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .staff-selection label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .staff-selection select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .staff-selection select:focus {
+      outline: none;
+      border-color: #2d8a8c;
+    }
+
+    .staff-selection select:disabled {
+      background-color: #f0f0f0;
+      cursor: not-allowed;
+    }
+
     .tab-buttons {
       display: flex;
       gap: 0;
       margin: 20px 0;
       border-bottom: 1px solid #ddd;
+      background: white;
+      padding: 0;
+      border-radius: 5px 5px 0 0;
     }
     
     .tab-btn {
@@ -37,7 +241,7 @@
       border: none;
       border-bottom: 3px solid transparent;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 600;
       color: #666;
       transition: all 0.3s;
     }
@@ -45,18 +249,62 @@
     .tab-btn:hover {
       color: #2d8a8c;
     }
-    
-    #calendarSection {
-      margin-top: 20px;
+
+    #shiftsSection,
+    #calendarSection,
+    #inboxSection {
+      background: white;
+      padding: 20px;
+      border-radius: 0 0 5px 5px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      display: none;
     }
-    
+
+    .shifts-list {
+      display: grid;
+      gap: 15px;
+    }
+
+    .shift-card {
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      transition: all 0.3s;
+    }
+
+    .shift-card:hover {
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .shift-card h3 {
+      margin-top: 0;
+      color: #2d8a8c;
+      font-size: 16px;
+    }
+
+    .shift-card p {
+      margin: 8px 0;
+      font-size: 14px;
+    }
+
+    #rosterCalendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+      border: 1px solid #ddd;
+      background-color: white;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
     .calendar-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
     }
-    
+
     .calendar-header button {
       padding: 8px 16px;
       background-color: #2d8a8c;
@@ -64,85 +312,168 @@
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      font-weight: bold;
+      font-weight: 600;
+      transition: background-color 0.3s;
     }
-    
-    #rosterCalendar {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 0;
-      border: 1px solid #ddd;
-      background-color: white;
+
+    .calendar-header button:hover {
+      background-color: #1f5d60;
+    }
+
+    #inboxList {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    #tradeInstruction {
+      background-color: #cfe9ff;
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      border-left: 4px solid #0d6efd;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    h2 {
+      color: #2d8a8c;
+      margin-bottom: 15px;
+      font-size: 20px;
+    }
+
+    h3 {
+      color: #333;
+      margin-top: 20px;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+
+      .app-header {
+        padding: 20px;
+      }
+
+      .app-header h1 {
+        font-size: 20px;
+      }
+
+      .tab-buttons {
+        flex-wrap: wrap;
+      }
+
+      .tab-btn {
+        flex: 1;
+        text-align: center;
+        font-size: 12px;
+        padding: 10px;
+      }
+
+      #rosterCalendar {
+        font-size: 12px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header class="app-header">
-      <h1>STAR 1 Shift Trade Portal</h1>
-      <p>Request, Approve & Manage Shift Trades</p>
-    </header>
+  <!-- LOGIN SCREEN -->
+  <div id="loginContainer">
+    <div class="login-box">
+      <h1>🚑 STAR 1</h1>
+      <p>Shift Trade Portal</p>
+      
+      <div class="login-form">
+        <div class="form-group">
+          <label for="loginStaffSelect">Select Your Name</label>
+          <select id="loginStaffSelect">
+            <option value="">-- Choose Your Name --</option>
+          </select>
+        </div>
 
-    <section class="staff-selection">
-      <label for="staffSelect">Select Your Name</label>
-      <select id="staffSelect">
-        <option value="">Choose your name...</option>
-        <optgroup label="Paramedics">
-          <option value="Greg Barton">Greg Barton</option>
-          <option value="Scott McTaggart">Scott McTaggart</option>
-          <option value="Dave Allison">Dave Allison</option>
-          <option value="Mackenzie Wardle">Mackenzie Wardle</option>
-          <option value="Chad Hegge">Chad Hegge</option>
-          <option value="Ken King">Ken King</option>
-          <option value="John Doyle">John Doyle</option>
-          <option value="Bob Odney">Bob Odney</option>
-        </optgroup>
-        <optgroup label="Nurses">
-          <option value="Graham Newton">Graham Newton</option>
-          <option value="Stuart Grant">Stuart Grant</option>
-          <option value="Kellie Ann Vogelaar">Kellie Ann Vogelaar</option>
-          <option value="Michelle Sexsmith">Michelle Sexsmith</option>
-          <option value="Carolyn Hogan">Carolyn Hogan</option>
-          <option value="Kris Austin">Kris Austin</option>
-          <option value="Flo Butler">Flo Butler</option>
-          <option value="Jodi Scott">Jodi Scott</option>
-          <option value="Janice Kirkham">Janice Kirkham</option>
-        </optgroup>
-      </select>
-    </section>
+        <div class="form-group">
+          <label for="loginPassword">Login Code</label>
+          <input 
+            type="password" 
+            id="loginPassword" 
+            placeholder="Enter your login code"
+            onkeypress="if(event.key==='Enter') handleLogin()"
+          />
+        </div>
 
-    <!-- Tab navigation -->
-    <div class="tab-buttons">
-      <button id="shiftsTab" class="tab-btn" style="border-bottom: 3px solid #2d8a8c;">My Shifts</button>
-      <button id="calendarTab" class="tab-btn">Calendar View</button>
-      <button id="inboxTab" class="tab-btn">📬 Trade Inbox</button>
-    </div>
+        <button class="login-button" onclick="handleLogin()">Login</button>
 
-    <!-- Shifts List View -->
-    <section id="shiftsSection" style="display:none;">
-      <h2 id="shiftsTitle"></h2>
-      <div id="shiftsList" class="shifts-list"></div>
-    </section>
-
-    <!-- Calendar View -->
-    <section id="calendarSection" style="display:none;">
-      <div class="calendar-header">
-        <button id="prevMonth">← Previous</button>
-        <h2 id="currentMonth"></h2>
-        <button id="nextMonth">Next →</button>
+        <div class="password-hint">
+          <strong>Enter your Login Code</strong><br>
+          Example: B123 (for Greg Barton)
+        </div>
       </div>
-      <div id="rosterCalendar"></div>
-      <p style="margin-top: 15px; font-size: 12px; color: #666;">
-        <strong>Legend:</strong> 🚑 = Paramedic | ⚕️ = Nurse | 🌙 = Night Shift | 
-        <span style="background-color: #90EE90; padding: 2px 6px; border-radius: 3px;">Green = Your Shift</span>
-      </p>
-    </section>
+    </div>
+  </div>
 
-    <!-- Trade Inbox -->
-    <section id="inboxSection" style="display:none;">
-      <h2>Trade Requests</h2>
-      <div id="inboxList"></div>
-    </section>
+  <!-- MAIN APP -->
+  <div id="mainContent">
+    <div class="container">
+      <div class="header-top">
+        <div id="loggedInUser"></div>
+        <button class="logout-btn" onclick="handleLogout()">Logout</button>
+      </div>
+
+      <header class="app-header">
+        <h1>STAR 1 Shift Trade Portal</h1>
+        <p>Request, Approve & Manage Shift Trades</p>
+      </header>
+
+      <section class="staff-selection">
+        <label for="staffSelect">Logged In As</label>
+        <select id="staffSelect">
+          <option value="">Choose your name...</option>
+        </select>
+      </section>
+
+      <!-- Tab navigation -->
+      <div class="tab-buttons">
+        <button id="shiftsTab" class="tab-btn" style="border-bottom: 3px solid #2d8a8c;">My Shifts</button>
+        <button id="calendarTab" class="tab-btn">Calendar View</button>
+        <button id="inboxTab" class="tab-btn">📬 Trade Inbox</button>
+      </div>
+
+      <!-- Shifts List View -->
+      <section id="shiftsSection">
+        <h2 id="shiftsTitle"></h2>
+        <div id="shiftsList" class="shifts-list"></div>
+      </section>
+
+      <!-- Calendar View -->
+      <section id="calendarSection">
+        <div class="calendar-header">
+          <button id="prevMonth">← Previous</button>
+          <h2 id="currentMonth"></h2>
+          <button id="nextMonth">Next →</button>
+        </div>
+        <div id="rosterCalendar"></div>
+        <p style="margin-top: 15px; font-size: 12px; color: #666;">
+          <strong>Legend:</strong> 🚑 = Paramedic | ⚕️ = Nurse | 🌙 = Night Shift | 
+          <span style="background-color: #90EE90; padding: 2px 6px; border-radius: 3px;">Green = Your Shift</span> |
+          <span style="background-color: #FFA500; padding: 2px 6px; border-radius: 3px; color: white;">Orange = Selected</span>
+        </p>
+      </section>
+
+      <!-- Trade Inbox -->
+      <section id="inboxSection">
+        <h2>Trade Requests</h2>
+        <div id="inboxList"></div>
+      </section>
+    </div>
   </div>
 
   <script src="app.js"></script>
