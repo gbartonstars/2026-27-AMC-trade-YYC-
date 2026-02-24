@@ -1,9 +1,12 @@
+// Firebase DB (firebase is initialized in your HTML before this file)
 const db = firebase.database();
+
 let currentStaff = null;
 let allSchedules = {};
 let tradeRequests = {};
 let extraShiftRequests = {};
 let isLoggedIn = false;
+let hasShownLoginAlert = false; // to show login summary once
 
 // Staff categorization
 const PARAMEDICS = [
@@ -55,14 +58,17 @@ window.addEventListener('DOMContentLoaded', () => {
 // ==================== LOGIN SYSTEM ====================
 
 function showLoginScreen() {
-  // Hide main content
   document.getElementById('mainContent').style.display = 'none';
   document.getElementById('loginContainer').style.display = 'flex';
-  
+
   // Populate staff dropdown
   const staffSelect = document.getElementById('loginStaffSelect');
-  staffSelect.innerHTML = '<option value="">-- Select Your Name --</option>';
-  
+  staffSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '-- Select Your Name --';
+  staffSelect.appendChild(placeholder);
+
   ALL_STAFF.forEach(staff => {
     const option = document.createElement('option');
     option.value = staff;
@@ -74,49 +80,48 @@ function showLoginScreen() {
 function handleLogin() {
   const selectedStaff = document.getElementById('loginStaffSelect').value;
   const password = document.getElementById('loginPassword').value;
-  
+
   if (!selectedStaff) {
     alert('Please select your name');
     return;
   }
-  
+
   if (!password) {
     alert('Please enter your login code');
     return;
   }
-  
-  // Check password against login codes
+
   const correctPassword = LOGIN_CODES[selectedStaff];
-  
+
   if (password !== correctPassword) {
     alert('❌ Invalid login code. Please try again.');
     document.getElementById('loginPassword').value = '';
     return;
   }
-  
+
   // Login successful
   isLoggedIn = true;
   currentStaff = selectedStaff;
+  hasShownLoginAlert = false;
+
   console.log(`✅ Logged in as: ${currentStaff}`);
-  
-  // Hide login, show main content
+
   document.getElementById('loginContainer').style.display = 'none';
   document.getElementById('mainContent').style.display = 'block';
-  
-  // Update header with logged-in user
   document.getElementById('loggedInUser').textContent = `Logged in as: ${currentStaff}`;
-  
-  // Set staff select dropdown and load data
-  document.getElementById('staffSelect').value = currentStaff;
-  document.getElementById('staffSelect').disabled = true;
-  
-  // Load all data
+
+  // If a #staffSelect exists (older layout), set it safely
+  const headerStaffSelect = document.getElementById('staffSelect');
+  if (headerStaffSelect) {
+    headerStaffSelect.value = currentStaff;
+    headerStaffSelect.disabled = true;
+  }
+
   loadAllSchedules();
   loadTradeRequests();
   loadExtraShiftRequests();
   setupEventListeners();
-  
-  // Initialize the view
+
   renderStaffsShifts();
   renderRosterCalendar();
   renderTradeInbox();
@@ -125,16 +130,15 @@ function handleLogin() {
 function handleLogout() {
   const confirmed = confirm('Are you sure you want to logout?');
   if (!confirmed) return;
-  
+
   isLoggedIn = false;
   currentStaff = null;
   selectedTradeShift = null;
-  
-  // Reset form
+  hasShownLoginAlert = false;
+
   document.getElementById('loginPassword').value = '';
   document.getElementById('loginStaffSelect').value = '';
-  
-  // Show login screen
+
   document.getElementById('mainContent').style.display = 'none';
   document.getElementById('loginContainer').style.display = 'flex';
 }
@@ -145,7 +149,7 @@ function setupEventListeners() {
   const shiftsTab = document.getElementById('shiftsTab');
   const calendarTab = document.getElementById('calendarTab');
   const inboxTab = document.getElementById('inboxTab');
-  
+
   if (shiftsTab) {
     shiftsTab.addEventListener('click', () => {
       document.getElementById('shiftsSection').style.display = 'block';
@@ -157,7 +161,7 @@ function setupEventListeners() {
       selectedTradeShift = null;
     });
   }
-  
+
   if (calendarTab) {
     calendarTab.addEventListener('click', () => {
       document.getElementById('shiftsSection').style.display = 'none';
@@ -185,14 +189,14 @@ function setupEventListeners() {
 
   const prevMonth = document.getElementById('prevMonth');
   const nextMonth = document.getElementById('nextMonth');
-  
+
   if (prevMonth) {
     prevMonth.addEventListener('click', () => {
       window.calendarDate.setMonth(window.calendarDate.getMonth() - 1);
       renderRosterCalendar();
     });
   }
-  
+
   if (nextMonth) {
     nextMonth.addEventListener('click', () => {
       window.calendarDate.setMonth(window.calendarDate.getMonth() + 1);
@@ -203,42 +207,60 @@ function setupEventListeners() {
 
 function loadAllSchedules() {
   console.log('Loading roster from Firebase...');
-  db.ref('generatedRoster').on('value', (snapshot) => {
-    allSchedules = snapshot.val() || {};
-    console.log('Roster loaded');
-    if (currentStaff) {
-      renderStaffsShifts();
-      renderRosterCalendar();
+  db.ref('generatedRoster').on(
+    'value',
+    (snapshot) => {
+      allSchedules = snapshot.val() || {};
+      console.log('Roster loaded');
+      if (currentStaff) {
+        renderStaffsShifts();
+        renderRosterCalendar();
+      }
+    },
+    (error) => {
+      console.error('Error loading roster:', error);
     }
-  }, (error) => {
-    console.error('Error loading roster:', error);
-  });
+  );
 }
 
 function loadTradeRequests() {
   console.log('Loading trade requests...');
-  db.ref('tradeRequests').on('value', (snapshot) => {
-    tradeRequests = snapshot.val() || {};
-    console.log('Trade requests loaded');
-    if (currentStaff) {
-      renderTradeInbox();
+  db.ref('tradeRequests').on(
+    'value',
+    (snapshot) => {
+      tradeRequests = snapshot.val() || {};
+      console.log('Trade requests loaded');
+      if (currentStaff) {
+        renderTradeInbox();
+
+        // Show login summary ONCE after data is available
+        if (!hasShownLoginAlert) {
+          checkLoginAlerts();
+          hasShownLoginAlert = true;
+        }
+      }
+    },
+    (error) => {
+      console.error('Error loading trade requests:', error);
     }
-  }, (error) => {
-    console.error('Error loading trade requests:', error);
-  });
+  );
 }
 
 function loadExtraShiftRequests() {
   console.log('Loading extra shift requests...');
-  db.ref('extraShiftRequests').on('value', (snapshot) => {
-    extraShiftRequests = snapshot.val() || {};
-    console.log('Extra shift requests loaded');
-    if (currentStaff) {
-      renderRosterCalendar();
+  db.ref('extraShiftRequests').on(
+    'value',
+    (snapshot) => {
+      extraShiftRequests = snapshot.val() || {};
+      console.log('Extra shift requests loaded');
+      if (currentStaff) {
+        renderRosterCalendar();
+      }
+    },
+    (error) => {
+      console.error('Error loading extra shift requests:', error);
     }
-  }, (error) => {
-    console.error('Error loading extra shift requests:', error);
-  });
+  );
 }
 
 function getStaffRole(staffName) {
@@ -272,8 +294,7 @@ function subtractDays(dateStr, days) {
 function validateScheduleForStaff(staffName, schedule) {
   const violations = [];
   const shiftTypes = ['paraDay', 'nurseDay', 'paraNight', 'nurseNight'];
-  
-  // Find all shifts for this staff member in the schedule
+
   const staffShifts = [];
   for (const [dateStr, dayData] of Object.entries(schedule)) {
     if (!dayData || typeof dayData !== 'object') continue;
@@ -283,69 +304,56 @@ function validateScheduleForStaff(staffName, schedule) {
       }
     }
   }
-  
-  // Sort by date
+
   staffShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
-  
   console.log(`Validating ${staffName}:`, staffShifts);
-  
-  // Check rules for each shift
+
   for (let i = 0; i < staffShifts.length; i++) {
     const current = staffShifts[i];
-    
-    // Check if this is a night shift
+
     if (isNightShift(current.shiftId)) {
-      // Rule: Cannot work next day at all after a night shift
       const nextDay = addDays(current.date, 1);
-      
-      // Check if this person has ANY shift the next day
-      const hasNextDayShift = staffShifts.some(shift => shift.date === nextDay);
-      
+      const hasNextDayShift = staffShifts.some((shift) => shift.date === nextDay);
       if (hasNextDayShift) {
-        violations.push(`Cannot work night shift on ${current.date} and then work on ${nextDay}`);
+        violations.push(
+          `Cannot work night shift on ${current.date} and then work on ${nextDay}`
+        );
         return violations;
       }
     }
-    
-    // Check if this is a day shift
+
     if (isDayShift(current.shiftId)) {
-      // Rule 1: Cannot work both day and night shift on same day
-      const hasSameDayNight = staffShifts.some(shift => 
-        shift.date === current.date && 
-        isNightShift(shift.shiftId)
+      const hasSameDayNight = staffShifts.some(
+        (shift) => shift.date === current.date && isNightShift(shift.shiftId)
       );
-      
       if (hasSameDayNight) {
-        violations.push(`Cannot work day shift and night shift on same day ${current.date}`);
+        violations.push(
+          `Cannot work day shift and night shift on same day ${current.date}`
+        );
         return violations;
       }
-      
-      // Rule 2: Cannot work day shift if there's a night shift the previous day
+
       const prevDay = subtractDays(current.date, 1);
-      const hasPrevDayNight = staffShifts.some(shift => 
-        shift.date === prevDay && 
-        isNightShift(shift.shiftId)
+      const hasPrevDayNight = staffShifts.some(
+        (shift) => shift.date === prevDay && isNightShift(shift.shiftId)
       );
-      
       if (hasPrevDayNight) {
-        violations.push(`Cannot work night shift on ${prevDay} and then day shift on ${current.date}`);
+        violations.push(
+          `Cannot work night shift on ${prevDay} and then day shift on ${current.date}`
+        );
         return violations;
       }
     }
   }
-  
+
   return violations;
 }
 
+// Used when validating only the dates involved in a trade
 function validateShiftRulesForSpecificShifts(staffName, schedule, targetDates) {
-  /**
-   * Validates ONLY the shifts on specific dates, ignoring other shifts
-   * This prevents false positives from unrelated shifts
-   */
   const violations = [];
   const shiftTypes = ['paraDay', 'nurseDay', 'paraNight', 'nurseNight'];
-  
-  // Find shifts for this staff ONLY on the target dates
+
   const staffShifts = [];
   for (const dateStr of targetDates) {
     const dayData = schedule[dateStr];
@@ -356,52 +364,63 @@ function validateShiftRulesForSpecificShifts(staffName, schedule, targetDates) {
       }
     }
   }
-  
+
   staffShifts.sort((a, b) => new Date(a.date) - new Date(b.date));
-  
   console.log(`Validating ${staffName} on specific dates:`, staffShifts);
-  
-  // Check rules ONLY for these shifts and their immediate neighbors
+
   for (let i = 0; i < staffShifts.length; i++) {
     const current = staffShifts[i];
-    
+
     if (isNightShift(current.shiftId)) {
       const nextDay = addDays(current.date, 1);
-      const hasNextDayShift = staffShifts.some(shift => shift.date === nextDay);
+      const hasNextDayShift = staffShifts.some((shift) => shift.date === nextDay);
       if (hasNextDayShift) {
-        violations.push(`Cannot work night shift on ${current.date} and then work on ${nextDay}`);
+        violations.push(
+          `Cannot work night shift on ${current.date} and then work on ${nextDay}`
+        );
         return violations;
       }
     }
-    
+
     if (isDayShift(current.shiftId)) {
-      const hasSameDayNight = staffShifts.some(shift => 
-        shift.date === current.date && isNightShift(shift.shiftId)
+      const hasSameDayNight = staffShifts.some(
+        (shift) => shift.date === current.date && isNightShift(shift.shiftId)
       );
       if (hasSameDayNight) {
-        violations.push(`Cannot work day shift and night shift on same day ${current.date}`);
+        violations.push(
+          `Cannot work day shift and night shift on same day ${current.date}`
+        );
         return violations;
       }
-      
+
       const prevDay = subtractDays(current.date, 1);
-      const hasPrevDayNight = staffShifts.some(shift => 
-        shift.date === prevDay && isNightShift(shift.shiftId)
+      const hasPrevDayNight = staffShifts.some(
+        (shift) => shift.date === prevDay && isNightShift(shift.shiftId)
       );
       if (hasPrevDayNight) {
-        violations.push(`Cannot work night shift on ${prevDay} and then day shift on ${current.date}`);
+        violations.push(
+          `Cannot work night shift on ${prevDay} and then day shift on ${current.date}`
+        );
         return violations;
       }
     }
   }
-  
+
   return violations;
+}
+
+// Extra shift validation: temporarily add the shift and run the full rules
+function validateExtraShiftRules(staffName, dateStr, shiftId) {
+  const tempSchedule = JSON.parse(JSON.stringify(allSchedules || {}));
+  if (!tempSchedule[dateStr]) tempSchedule[dateStr] = {};
+  tempSchedule[dateStr][shiftId] = staffName;
+  return validateScheduleForStaff(staffName, tempSchedule);
 }
 
 // ==================== RENDER FUNCTIONS ====================
 
 function renderStaffsShifts() {
   console.log('Rendering shifts for:', currentStaff);
-  
   if (!currentStaff) return;
 
   const shiftsSection = document.getElementById('shiftsSection');
@@ -412,18 +431,18 @@ function renderStaffsShifts() {
   shiftsList.innerHTML = '';
 
   const staffShifts = [];
-  
+
   for (const [dateStr, dayData] of Object.entries(allSchedules)) {
     if (!dayData || typeof dayData !== 'object') continue;
-    
+
     const shiftTypes = [
       { key: 'paraDay', label: 'Paramedic - Day' },
       { key: 'nurseDay', label: 'Nurse - Day' },
       { key: 'paraNight', label: 'Paramedic - Night' },
       { key: 'nurseNight', label: 'Nurse - Night' }
     ];
-    
-    shiftTypes.forEach(shift => {
+
+    shiftTypes.forEach((shift) => {
       if (dayData[shift.key] === currentStaff) {
         staffShifts.push({
           date: dateStr,
@@ -437,7 +456,8 @@ function renderStaffsShifts() {
   console.log(`Found ${staffShifts.length} shifts for ${currentStaff}`);
 
   if (staffShifts.length === 0) {
-    shiftsList.innerHTML = '<p style="color: #999;">No shifts assigned in the roster.</p>';
+    shiftsList.innerHTML =
+      '<p style="color: #999;">No shifts assigned in the roster.</p>';
     shiftsSection.style.display = 'block';
     return;
   }
@@ -447,7 +467,7 @@ function renderStaffsShifts() {
   staffShifts.forEach((shift) => {
     const d = new Date(shift.date + 'T00:00:00');
     const dateFormatted = d.toDateString();
-    
+
     const card = document.createElement('div');
     card.className = 'shift-card';
     card.style.padding = '15px';
@@ -455,15 +475,17 @@ function renderStaffsShifts() {
     card.style.backgroundColor = '#f9f9f9';
     card.style.border = '1px solid #ddd';
     card.style.borderRadius = '5px';
-    
+
     card.innerHTML = `
       <h3 style="margin-top: 0;">${dateFormatted}</h3>
       <p><strong>Shift:</strong> ${shift.shiftLabel}</p>
       <p><strong>Date:</strong> ${shift.date}</p>
-      <button onclick="selectTradeShiftInCalendar('${shift.date}', '${shift.shiftId}', '${shift.shiftLabel}')" style="padding: 8px 16px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+      <button onclick="selectTradeShiftInCalendar('${shift.date}', '${shift.shiftId}', '${shift.shiftLabel}')"
+              style="padding: 8px 16px; background-color: #2d8a8c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
         Request Trade
       </button>
     `;
+
     shiftsList.appendChild(card);
   });
 
@@ -471,7 +493,6 @@ function renderStaffsShifts() {
 }
 
 function selectTradeShiftInCalendar(myDate, myShiftId, myShiftLabel) {
-  // Store the shift they want to trade
   selectedTradeShift = {
     date: myDate,
     shiftId: myShiftId,
@@ -480,31 +501,29 @@ function selectTradeShiftInCalendar(myDate, myShiftId, myShiftLabel) {
 
   console.log('Selected shift to trade:', selectedTradeShift);
 
-  // Switch to calendar view
   document.getElementById('shiftsSection').style.display = 'none';
   document.getElementById('calendarSection').style.display = 'block';
   document.getElementById('inboxSection').style.display = 'none';
-  
+
   const shiftsTab = document.getElementById('shiftsTab');
   const calendarTab = document.getElementById('calendarTab');
   const inboxTab = document.getElementById('inboxTab');
-  
+
   shiftsTab.style.borderBottom = 'none';
   calendarTab.style.borderBottom = '3px solid #2d8a8c';
   inboxTab.style.borderBottom = 'none';
 
-  // Render calendar and highlight the selected shift
   renderRosterCalendar();
-  
-  // Show instruction
+
   const instruction = document.createElement('div');
   instruction.id = 'tradeInstruction';
-  instruction.style.cssText = 'background-color: #cfe9ff; padding: 15px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #0d6efd;';
+  instruction.style.cssText =
+    'background-color: #cfe9ff; padding: 15px; border-radius: 5px; margin-bottom: 15px; border-left: 4px solid #0d6efd;';
   instruction.innerHTML = `
     <strong>📍 Shift Selected for Trade:</strong> ${myShiftLabel} on ${myDate}<br>
     <em>Click on another person's shift below to initiate the trade request</em>
   `;
-  
+
   const calendarSection = document.getElementById('calendarSection');
   const existingInstruction = document.getElementById('tradeInstruction');
   if (existingInstruction) existingInstruction.remove();
@@ -523,17 +542,31 @@ function renderRosterCalendar() {
 
   const year = window.calendarDate.getFullYear();
   const month = window.calendarDate.getMonth();
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                      'July', 'August', 'September', 'October', 'November', 'December'];
-  
-  document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+  const monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December'
+  ];
+
+  document.getElementById('currentMonth').textContent =
+    monthNames[month] + ' ' + year;
 
   calendarEl.innerHTML = '';
-  
+
   const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  dayHeaders.forEach(day => {
+  dayHeaders.forEach((day) => {
     const header = document.createElement('div');
-    header.style.cssText = 'font-weight: bold; text-align: center; padding: 8px; background-color: #2d8a8c; color: white;';
+    header.style.cssText =
+      'font-weight: bold; text-align: center; padding: 8px; background-color: #2d8a8c; color: white;';
     header.textContent = day;
     calendarEl.appendChild(header);
   });
@@ -548,13 +581,22 @@ function renderRosterCalendar() {
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(
+      day
+    ).padStart(2, '0')}`;
     const dayData = allSchedules[dateStr];
-    
+
     const dayCell = document.createElement('div');
-    dayCell.style.cssText = 'padding: 10px; border: 1px solid #ddd; min-height: 120px; cursor: pointer; transition: background-color 0.2s;';
-    dayCell.addEventListener('mouseenter', () => dayCell.style.backgroundColor = '#f0f0f0');
-    dayCell.addEventListener('mouseleave', () => dayCell.style.backgroundColor = 'transparent');
+    dayCell.style.cssText =
+      'padding: 10px; border: 1px solid #ddd; min-height: 120px; cursor: pointer; transition: background-color 0.2s;';
+    dayCell.addEventListener(
+      'mouseenter',
+      () => (dayCell.style.backgroundColor = '#f0f0f0')
+    );
+    dayCell.addEventListener(
+      'mouseleave',
+      () => (dayCell.style.backgroundColor = 'transparent')
+    );
 
     const dayNum = document.createElement('div');
     dayNum.style.cssText = 'font-weight: bold; margin-bottom: 5px; color: #333;';
@@ -569,56 +611,65 @@ function renderRosterCalendar() {
         { key: 'nurseNight', label: 'RN Night', icon: '🌙⚕️' }
       ];
 
-      shifts.forEach(shift => {
+      shifts.forEach((shift) => {
         if (dayData[shift.key]) {
           const staffName = dayData[shift.key];
           const shiftDiv = document.createElement('div');
-          shiftDiv.style.cssText = 'font-size: 11px; margin-bottom: 3px; padding: 3px 5px; background-color: #e8f4f8; border-radius: 3px; cursor: pointer; transition: all 0.2s;';
-          
-          // Highlight current staff's shifts in green
+          shiftDiv.style.cssText =
+            'font-size: 11px; margin-bottom: 3px; padding: 3px 5px; background-color: #e8f4f8; border-radius: 3px; cursor: pointer; transition: all 0.2s;';
+
           if (staffName === currentStaff) {
             shiftDiv.style.backgroundColor = '#90EE90';
             shiftDiv.style.fontWeight = 'bold';
           }
 
-          // Highlight the selected shift for trading in bright orange
-          if (selectedTradeShift && dateStr === selectedTradeShift.date && shift.key === selectedTradeShift.shiftId) {
+          if (
+            selectedTradeShift &&
+            dateStr === selectedTradeShift.date &&
+            shift.key === selectedTradeShift.shiftId
+          ) {
             shiftDiv.style.backgroundColor = '#FFA500';
             shiftDiv.style.fontWeight = 'bold';
             shiftDiv.style.border = '2px solid #FF6600';
           }
 
           shiftDiv.innerHTML = `<strong>${shift.icon}</strong> ${staffName}`;
-          
-          // Click handler for trade
+
           shiftDiv.addEventListener('click', () => {
-            if (selectedTradeShift && dateStr === selectedTradeShift.date && shift.key === selectedTradeShift.shiftId) {
-              // Clicking your own selected shift - deselect it
+            if (
+              selectedTradeShift &&
+              dateStr === selectedTradeShift.date &&
+              shift.key === selectedTradeShift.shiftId
+            ) {
               selectedTradeShift = null;
               renderRosterCalendar();
             } else if (!selectedTradeShift) {
-              // No shift selected yet - select this one if it's yours
               if (staffName === currentStaff) {
                 selectTradeShiftInCalendar(dateStr, shift.key, shift.label);
               }
             } else {
-              // A shift is selected - initiate trade with this shift
               initiateTradeFromCalendar(dateStr, shift.key, staffName, shift.label);
             }
           });
 
           dayCell.appendChild(shiftDiv);
         } else {
-          // Empty shift slot
           const emptyShiftDiv = document.createElement('div');
-          emptyShiftDiv.style.cssText = 'font-size: 11px; margin-bottom: 3px; padding: 3px 5px; background-color: #ff6b6b; border-radius: 3px; cursor: pointer; transition: all 0.2s; font-weight: bold; color: white;';
-          
+          emptyShiftDiv.style.cssText =
+            'font-size: 11px; margin-bottom: 3px; padding: 3px 5px; background-color: #ff6b6b; border-radius: 3px; cursor: pointer; transition: all 0.2s; font-weight: bold; color: white;';
+
           const shiftLabel = shift.label;
           emptyShiftDiv.innerHTML = `<strong>${shift.icon}</strong> OPEN`;
-          
-          emptyShiftDiv.addEventListener('mouseenter', () => emptyShiftDiv.style.backgroundColor = '#ff5252');
-          emptyShiftDiv.addEventListener('mouseleave', () => emptyShiftDiv.style.backgroundColor = '#ff6b6b');
-          
+
+          emptyShiftDiv.addEventListener(
+            'mouseenter',
+            () => (emptyShiftDiv.style.backgroundColor = '#ff5252')
+          );
+          emptyShiftDiv.addEventListener(
+            'mouseleave',
+            () => (emptyShiftDiv.style.backgroundColor = '#ff6b6b')
+          );
+
           emptyShiftDiv.addEventListener('click', () => {
             requestExtraShift(dateStr, shift.key, shiftLabel);
           });
@@ -649,12 +700,17 @@ function initiateTradeFromCalendar(targetDate, targetShiftId, targetStaff, targe
   const myShiftId = selectedTradeShift.shiftId;
   const myStaff = currentStaff;
 
-  // Check role compatibility
   const currentRole = getStaffRole(myStaff);
   const targetRole = getStaffRole(targetStaff);
 
   if (currentRole !== targetRole) {
-    alert(`❌ You can only trade with other ${currentRole === 'paramedic' ? 'Paramedics' : 'Nurses'}.\n\n${targetStaff} is a ${targetRole === 'paramedic' ? 'Paramedic' : 'Nurse'}.`);
+    alert(
+      `❌ You can only trade with other ${
+        currentRole === 'paramedic' ? 'Paramedics' : 'Nurses'
+      }.\n\n${targetStaff} is a ${
+        targetRole === 'paramedic' ? 'Paramedic' : 'Nurse'
+      }.`
+    );
     return;
   }
 
@@ -663,66 +719,70 @@ function initiateTradeFromCalendar(targetDate, targetShiftId, targetStaff, targe
     return;
   }
 
-  // Validate shift rules - ONLY check the affected dates
   const affectedDates = [myDate, targetDate];
-  
-  const myViolations = validateShiftRulesForSpecificShifts(myStaff, allSchedules, affectedDates.concat([addDays(targetDate, 1), subtractDays(targetDate, 1)]));
-  const theirViolations = validateShiftRulesForSpecificShifts(targetStaff, allSchedules, affectedDates.concat([addDays(myDate, 1), subtractDays(myDate, 1)]));
-  
+
+  const myViolations = validateShiftRulesForSpecificShifts(
+    myStaff,
+    allSchedules,
+    affectedDates.concat([addDays(targetDate, 1), subtractDays(targetDate, 1)])
+  );
+  const theirViolations = validateShiftRulesForSpecificShifts(
+    targetStaff,
+    allSchedules,
+    affectedDates.concat([addDays(myDate, 1), subtractDays(myDate, 1)])
+  );
+
   const violations = [...myViolations, ...theirViolations];
 
   if (violations.length > 0) {
-    const violationMessage = violations.join('\n') + '\n\n❌ This trade violates shift scheduling rules and cannot be approved.';
+    const violationMessage =
+      violations.join('\n') +
+      '\n\n❌ This trade violates shift scheduling rules and cannot be approved.';
     alert(violationMessage);
     return;
   }
 
-  // Open the confirmation modal
-  openTradeConfirmationModal(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff, targetShiftLabel);
+  openTradeConfirmationModal(
+    myDate,
+    myShiftId,
+    myStaff,
+    targetDate,
+    targetShiftId,
+    targetStaff,
+    targetShiftLabel
+  );
 }
 
 function requestExtraShift(dateStr, shiftId, shiftLabel) {
   const currentRole = getStaffRole(currentStaff);
-  const shiftIsForRole = (shiftId.includes('para')) ? 'paramedic' : 'nurse';
-  
+  const shiftIsForRole = shiftId.includes('para') ? 'paramedic' : 'nurse';
+
   if (currentRole !== shiftIsForRole) {
-    alert(`❌ You can only request shifts for your role.\n\nThis is a ${shiftIsForRole === 'paramedic' ? 'Paramedic' : 'Nurse'} shift.`);
+    alert(
+      `❌ You can only request shifts for your role.\n\nThis is a ${
+        shiftIsForRole === 'paramedic' ? 'Paramedic' : 'Nurse'
+      } shift.`
+    );
     return;
   }
 
-  // Validate shift rules for extra shift
   const violations = validateExtraShiftRules(currentStaff, dateStr, shiftId);
-
   if (violations.length > 0) {
-    const violationMessage = violations.join('\n') + '\n\n❌ This shift request violates scheduling rules and cannot be approved.';
+    const violationMessage =
+      violations.join('\n') +
+      '\n\n❌ This shift request violates scheduling rules and cannot be approved.';
     alert(violationMessage);
     return;
   }
 
   const modal = document.createElement('div');
   modal.id = 'extraShiftModal';
-  modal.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  `;
-  
+  modal.style.cssText =
+    'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+
   const modalContent = document.createElement('div');
-  modalContent.style.cssText = `
-    background: white;
-    padding: 30px;
-    border-radius: 8px;
-    max-width: 600px;
-    width: 90%;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  `;
+  modalContent.style.cssText =
+    'background: white; padding: 30px; border-radius: 8px; max-width: 600px; width: 90%; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
 
   const d = new Date(dateStr + 'T00:00:00');
 
@@ -746,27 +806,23 @@ function requestExtraShift(dateStr, shiftId, shiftLabel) {
       </button>
     </div>
   `;
-  
+
   modal.appendChild(modalContent);
   document.body.appendChild(modal);
-  
+
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      closeExtraShiftModal();
-    }
+    if (e.target === modal) closeExtraShiftModal();
   });
 }
 
 function closeExtraShiftModal() {
   const modal = document.getElementById('extraShiftModal');
-  if (modal) {
-    modal.remove();
-  }
+  if (modal) modal.remove();
 }
 
 function submitExtraShiftRequest(dateStr, shiftId, shiftLabel) {
   const reason = document.getElementById('extraShiftReason').value || 'No reason provided';
-  
+
   const request = {
     staffName: currentStaff,
     date: dateStr,
@@ -776,12 +832,15 @@ function submitExtraShiftRequest(dateStr, shiftId, shiftLabel) {
     status: 'pending',
     createdAt: new Date().toISOString()
   };
-  
+
   const requestId = `${currentStaff}_${dateStr}_${shiftId}_${Date.now()}`;
-  
-  db.ref(`extraShiftRequests/${requestId}`).set(request)
+
+  db.ref(`extraShiftRequests/${requestId}`)
+    .set(request)
     .then(() => {
-      alert(`✅ Extra shift request submitted!\n\nAdmins will review and approve shortly.`);
+      alert(
+        '✅ Extra shift request submitted!\n\nAdmins will review and approve shortly.'
+      );
       closeExtraShiftModal();
       renderRosterCalendar();
     })
@@ -791,31 +850,23 @@ function submitExtraShiftRequest(dateStr, shiftId, shiftLabel) {
     });
 }
 
-function openTradeConfirmationModal(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff, targetShiftLabel) {
+function openTradeConfirmationModal(
+  myDate,
+  myShiftId,
+  myStaff,
+  targetDate,
+  targetShiftId,
+  targetStaff,
+  targetShiftLabel
+) {
   const modal = document.createElement('div');
   modal.id = 'tradeModal';
-  modal.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-  `;
-  
+  modal.style.cssText =
+    'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000;';
+
   const modalContent = document.createElement('div');
-  modalContent.style.cssText = `
-    background: white;
-    padding: 30px;
-    border-radius: 8px;
-    max-width: 600px;
-    width: 90%;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-  `;
+  modalContent.style.cssText =
+    'background: white; padding: 30px; border-radius: 8px; max-width: 600px; width: 90%; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
 
   const myShiftLabel = getShiftLabelFromId(myShiftId);
   const d1 = new Date(myDate + 'T00:00:00');
@@ -841,14 +892,12 @@ function openTradeConfirmationModal(myDate, myShiftId, myStaff, targetDate, targ
       </button>
     </div>
   `;
-  
+
   modal.appendChild(modalContent);
   document.body.appendChild(modal);
-  
+
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      closeModal();
-    }
+    if (e.target === modal) closeModal();
   });
 }
 
@@ -870,8 +919,12 @@ function renderTradeInbox() {
     if (trade.toStaff === currentStaff && trade.status === 'pending') {
       requestsForMe.push({ id: tradeId, ...trade });
     }
-    if ((trade.fromStaff === currentStaff || trade.toStaff === currentStaff) && 
-        (trade.status === 'accepted' || trade.status === 'both_accepted' || trade.status === 'adminApproved')) {
+    if (
+      (trade.fromStaff === currentStaff || trade.toStaff === currentStaff) &&
+      (trade.status === 'accepted' ||
+        trade.status === 'both_accepted' ||
+        trade.status === 'adminApproved')
+    ) {
       acceptedRequests.push({ id: tradeId, ...trade });
     }
   }
@@ -880,7 +933,7 @@ function renderTradeInbox() {
 
   // Extra shift requests section (for admins)
   if (ADMINS.includes(currentStaff)) {
-    let pendingExtraShifts = [];
+    const pendingExtraShifts = [];
     for (const [reqId, req] of Object.entries(extraShiftRequests)) {
       if (req.status === 'pending') {
         pendingExtraShifts.push({ id: reqId, ...req });
@@ -889,7 +942,7 @@ function renderTradeInbox() {
 
     if (pendingExtraShifts.length > 0) {
       html += '<h3 style="color: #28a745;">📋 Extra Shift Requests (Admin)</h3>';
-      pendingExtraShifts.forEach(req => {
+      pendingExtraShifts.forEach((req) => {
         const d = new Date(req.date + 'T00:00:00');
         html += `
           <div style="background-color: #fff3cd; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #ffc107;">
@@ -911,14 +964,20 @@ function renderTradeInbox() {
 
   if (myPendingRequests.length > 0) {
     html += '<h3 style="margin-top: 30px;">Requests Awaiting Response</h3>';
-    myPendingRequests.forEach(trade => {
+    myPendingRequests.forEach((trade) => {
       const d1 = new Date(trade.fromDate + 'T00:00:00');
       const d2 = new Date(trade.toDate + 'T00:00:00');
       html += `
         <div style="background-color: #fff3cd; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #ffc107;">
-          <p><strong>You requested:</strong> ${trade.toStaff}'s ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p>
-          <p><strong>You offered:</strong> Your ${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()})</p>
-          <p style="color: #666; font-size: 12px;">Waiting for ${trade.toStaff}'s response...</p>
+          <p><strong>You requested:</strong> ${trade.toStaff}'s ${getShiftLabelFromId(
+        trade.toShift
+      )} (${d2.toDateString()})</p>
+          <p><strong>You offered:</strong> Your ${getShiftLabelFromId(
+        trade.fromShift
+      )} (${d1.toDateString()})</p>
+          <p style="color: #666; font-size: 12px;">Waiting for ${
+            trade.toStaff
+          }'s response...</p>
         </div>
       `;
     });
@@ -926,14 +985,20 @@ function renderTradeInbox() {
 
   if (requestsForMe.length > 0) {
     html += '<h3 style="margin-top: 30px;">Requests from Others</h3>';
-    requestsForMe.forEach(trade => {
+    requestsForMe.forEach((trade) => {
       const d1 = new Date(trade.fromDate + 'T00:00:00');
       const d2 = new Date(trade.toDate + 'T00:00:00');
       html += `
         <div style="background-color: #d4edff; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid #0d6efd;">
-          <p><strong>${trade.fromStaff} is requesting:</strong> Your ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p>
-          <p><strong>They offer:</strong> Their ${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()})</p>
-          <p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${trade.reason}</p>
+          <p><strong>${trade.fromStaff} is requesting:</strong> Your ${getShiftLabelFromId(
+        trade.toShift
+      )} (${d2.toDateString()})</p>
+          <p><strong>They offer:</strong> Their ${getShiftLabelFromId(
+        trade.fromShift
+      )} (${d1.toDateString()})</p>
+          <p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${
+            trade.reason
+          }</p>
           <div style="display: flex; gap: 10px; margin-top: 10px;">
             <button onclick="acceptTrade('${trade.id}')" style="padding: 8px 16px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
               ✓ Accept
@@ -948,24 +1013,55 @@ function renderTradeInbox() {
   }
 
   if (acceptedRequests.length > 0) {
-    html += '<h3 style="margin-top: 30px;">✓ Accepted/Approved Trades</h3>';
-    acceptedRequests.forEach(trade => {
+    const needAdmin = acceptedRequests.some((t) => t.status === 'both_accepted');
+    const headingColor = needAdmin ? '#d9534f' : '#28a745';
+    const headingText = needAdmin
+      ? '⚠ Trades waiting ADMIN approval'
+      : '✓ Accepted/Approved Trades';
+
+    html += `<h3 style="margin-top: 30px; color: ${headingColor};">${headingText}</h3>`;
+
+    acceptedRequests.forEach((trade) => {
       const d1 = new Date(trade.fromDate + 'T00:00:00');
       const d2 = new Date(trade.toDate + 'T00:00:00');
-      const statusColor = trade.status === 'adminApproved' ? '#28a745' : '#ffc107';
-      const statusText = trade.status === 'adminApproved' ? 'Admin Approved' : 'Both Accepted';
+      const waitingAdmin = trade.status === 'both_accepted';
+
+      const statusColor =
+        trade.status === 'adminApproved'
+          ? '#28a745'
+          : waitingAdmin
+          ? '#d9534f'
+          : '#ffc107';
+
+      const statusText =
+        trade.status === 'adminApproved'
+          ? 'Admin Approved'
+          : waitingAdmin
+          ? 'Both Accepted – ADMIN ACTION REQUIRED'
+          : 'Both Accepted';
+
       html += `
-        <div style="background-color: #d4edda; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid ${statusColor};">
+        <div style="background-color: #d4edda; padding: 15px; margin-bottom: 10px; border-radius: 5px; border-left: 4px solid ${statusColor}; ${
+        waitingAdmin && ADMINS.includes(currentStaff)
+          ? 'box-shadow: 0 0 10px rgba(217,83,79,0.6);'
+          : ''
+      }">
           <p><strong>${trade.fromStaff} ↔ ${trade.toStaff}</strong></p>
-          <p>${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()}) ↔ ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p>
+          <p>${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()}) ↔ ${getShiftLabelFromId(
+        trade.toShift
+      )} (${d2.toDateString()})</p>
           <p style="color: #666; font-size: 12px;"><strong>Status:</strong> ${statusText}</p>
-          ${ADMINS.includes(currentStaff) && trade.status === 'both_accepted' ? `
+          ${
+            ADMINS.includes(currentStaff) && waitingAdmin
+              ? `
             <div style="display: flex; gap: 10px; margin-top: 10px;">
               <button onclick="approveTrade('${trade.id}')" style="padding: 8px 16px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
                 🔒 Admin Approve (Apply Changes)
               </button>
             </div>
-          ` : ''}
+          `
+              : ''
+          }
         </div>
       `;
     });
@@ -977,29 +1073,58 @@ function renderTradeInbox() {
 
   inboxList.innerHTML = html;
   inboxSection.style.display = 'block';
+
+  updateInboxTabBadge(myPendingRequests, requestsForMe, acceptedRequests);
+}
+
+// Badge on Trade Requests tab
+function updateInboxTabBadge(myPendingRequests, requestsForMe, acceptedRequests) {
+  const inboxTabBtn = document.getElementById('inboxTab');
+  if (!inboxTabBtn) return;
+
+  let totalRelevant = myPendingRequests.length + requestsForMe.length;
+
+  if (ADMINS.includes(currentStaff)) {
+    totalRelevant += acceptedRequests.filter((t) => t.status === 'both_accepted')
+      .length;
+  }
+
+  inboxTabBtn.textContent = 'Trade Requests';
+
+  if (totalRelevant > 0) {
+    inboxTabBtn.textContent = `Trade Requests (${totalRelevant})`;
+    inboxTabBtn.style.color = '#d9534f';
+  } else {
+    inboxTabBtn.style.color = '#666';
+  }
 }
 
 function getShiftLabelFromId(shiftId) {
   const labels = {
-    'paraDay': 'Paramedic - Day',
-    'nurseDay': 'Nurse - Day',
-    'paraNight': 'Paramedic - Night',
-    'nurseNight': 'Nurse - Night'
+    paraDay: 'Paramedic - Day',
+    nurseDay: 'Nurse - Day',
+    paraNight: 'Paramedic - Night',
+    nurseNight: 'Nurse - Night'
   };
   return labels[shiftId] || shiftId;
 }
 
 function closeModal() {
   const modal = document.getElementById('tradeModal');
-  if (modal) {
-    modal.remove();
-  }
+  if (modal) modal.remove();
   selectedTradeShift = null;
 }
 
-function submitTrade(myDate, myShiftId, myStaff, targetDate, targetShiftId, targetStaff) {
+function submitTrade(
+  myDate,
+  myShiftId,
+  myStaff,
+  targetDate,
+  targetShiftId,
+  targetStaff
+) {
   const tradeReason = document.getElementById('tradeReason').value;
-  
+
   const tradeRequest = {
     fromStaff: myStaff,
     fromDate: myDate,
@@ -1014,13 +1139,16 @@ function submitTrade(myDate, myShiftId, myStaff, targetDate, targetShiftId, targ
     createdAt: new Date().toISOString(),
     createdBy: myStaff
   };
-  
+
   console.log('Submitting trade request:', tradeRequest);
-  
+
   const tradeId = `${myStaff}_${myDate}_${Date.now()}`;
-  db.ref(`tradeRequests/${tradeId}`).set(tradeRequest)
+  db.ref(`tradeRequests/${tradeId}`)
+    .set(tradeRequest)
     .then(() => {
-      alert(`✅ Trade request submitted!\n\n${targetStaff} will need to accept or decline.`);
+      alert(
+        `✅ Trade request submitted!\n\n${targetStaff} will need to accept or decline.`
+      );
       closeModal();
       selectedTradeShift = null;
       renderStaffsShifts();
@@ -1035,14 +1163,17 @@ function submitTrade(myDate, myShiftId, myStaff, targetDate, targetShiftId, targ
 
 function acceptTrade(tradeId) {
   console.log(`Accepting trade: ${tradeId}`);
-  
-  db.ref(`tradeRequests/${tradeId}`).update({
-    toStaffAccepted: true,
-    status: 'both_accepted',
-    toStaffAcceptedAt: new Date().toISOString()
-  })
+
+  db.ref(`tradeRequests/${tradeId}`)
+    .update({
+      toStaffAccepted: true,
+      status: 'both_accepted',
+      toStaffAcceptedAt: new Date().toISOString()
+    })
     .then(() => {
-      alert('✅ You accepted the trade!\n\nAn admin will review and apply the changes.');
+      alert(
+        '✅ You accepted the trade!\n\nAn admin will review and apply the changes.'
+      );
       renderTradeInbox();
     })
     .catch((error) => {
@@ -1053,13 +1184,14 @@ function acceptTrade(tradeId) {
 
 function declineTrade(tradeId) {
   const reason = prompt('Reason for declining (optional):');
-  
-  db.ref(`tradeRequests/${tradeId}`).update({
-    status: 'declined',
-    declinedBy: currentStaff,
-    declinedReason: reason || 'No reason provided',
-    declinedAt: new Date().toISOString()
-  })
+
+  db.ref(`tradeRequests/${tradeId}`)
+    .update({
+      status: 'declined',
+      declinedBy: currentStaff,
+      declinedReason: reason || 'No reason provided',
+      declinedAt: new Date().toISOString()
+    })
     .then(() => {
       alert('✅ Trade declined.');
       renderTradeInbox();
@@ -1071,13 +1203,13 @@ function declineTrade(tradeId) {
 }
 
 function approveExtraShift(requestId, dateStr, shiftId, staffName) {
-  db.ref(`extraShiftRequests/${requestId}`).update({
-    status: 'approved',
-    approvedBy: currentStaff,
-    approvedAt: new Date().toISOString()
-  })
+  db.ref(`extraShiftRequests/${requestId}`)
+    .update({
+      status: 'approved',
+      approvedBy: currentStaff,
+      approvedAt: new Date().toISOString()
+    })
     .then(() => {
-      // Update roster to assign the shift
       const dayData = allSchedules[dateStr] || {};
       dayData[shiftId] = staffName;
       allSchedules[dateStr] = dayData;
@@ -1096,13 +1228,14 @@ function approveExtraShift(requestId, dateStr, shiftId, staffName) {
 
 function denyExtraShift(requestId) {
   const reason = prompt('Reason for denying (optional):');
-  
-  db.ref(`extraShiftRequests/${requestId}`).update({
-    status: 'denied',
-    deniedBy: currentStaff,
-    deniedReason: reason || 'No reason provided',
-    deniedAt: new Date().toISOString()
-  })
+
+  db.ref(`extraShiftRequests/${requestId}`)
+    .update({
+      status: 'denied',
+      deniedBy: currentStaff,
+      deniedReason: reason || 'No reason provided',
+      deniedAt: new Date().toISOString()
+    })
     .then(() => {
       alert('✅ Extra shift request denied.');
       renderTradeInbox();
@@ -1137,22 +1270,25 @@ function approveTrade(tradeId) {
     return;
   }
 
-  // Swap shifts
   const temp = allSchedules[fromDate][fromShift];
   allSchedules[fromDate][fromShift] = allSchedules[toDate][toShift];
   allSchedules[toDate][toShift] = temp;
 
-  // Update Firebase
-  db.ref('generatedRoster').set(allSchedules)
+  db.ref('generatedRoster')
+    .set(allSchedules)
     .then(() => {
-      return db.ref(`tradeRequests/${tradeId}`).update({
-        status: 'adminApproved',
-        approvedBy: currentStaff,
-        approvedAt: new Date().toISOString()
-      });
+      return db
+        .ref(`tradeRequests/${tradeId}`)
+        .update({
+          status: 'adminApproved',
+          approvedBy: currentStaff,
+          approvedAt: new Date().toISOString()
+        });
     })
     .then(() => {
-      alert(`✅ Trade approved and applied!\n\nShifts have been swapped in the roster.`);
+      alert(
+        '✅ Trade approved and applied!\n\nShifts have been swapped in the roster.'
+      );
       renderRosterCalendar();
       renderStaffsShifts();
       renderTradeInbox();
@@ -1161,4 +1297,34 @@ function approveTrade(tradeId) {
       console.error('Error approving trade:', error);
       alert('❌ Error approving trade. Please try again.');
     });
+}
+
+// One-time popup on login summarizing pending trades
+function checkLoginAlerts() {
+  if (!currentStaff) return;
+
+  const myPending = [];
+  const forMe = [];
+  const needAdmin = [];
+
+  for (const [tradeId, trade] of Object.entries(tradeRequests)) {
+    if (trade.fromStaff === currentStaff && trade.status === 'pending')
+      myPending.push(trade);
+    if (trade.toStaff === currentStaff && trade.status === 'pending')
+      forMe.push(trade);
+    if (ADMINS.includes(currentStaff) && trade.status === 'both_accepted')
+      needAdmin.push(trade);
+  }
+
+  const messages = [];
+  if (forMe.length > 0)
+    messages.push(`${forMe.length} trade request(s) need your response.`);
+  if (myPending.length > 0)
+    messages.push(`${myPending.length} trade request(s) you sent are awaiting response.`);
+  if (needAdmin.length > 0)
+    messages.push(`${needAdmin.length} trade(s) are waiting for ADMIN approval.`);
+
+  if (messages.length > 0) {
+    alert('Trade Request Summary:\n\n' + messages.join('\n'));
+  }
 }
