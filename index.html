@@ -381,6 +381,11 @@
     </div>
 
     <script>
+        // SECURITY: escape database text before inserting it into the page
+        function esc(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+        // SECURITY: safe JavaScript string argument inside an onclick="..." attribute
+        function jsArg(v) { return esc(JSON.stringify(String(v ?? ''))); }
+        const debugLog = () => {};
         const firebaseConfig = {
             apiKey: "AIzaSyB3EuJcuoyCAc43Xvuv8G7M4o8_BgLeeTQ",
             authDomain: "star1-schedule.firebaseapp.com",
@@ -515,10 +520,10 @@
         function loadAllSchedules() {
             db.ref('generatedRoster').on('value', (snapshot) => {
                 allSchedules = snapshot.val() || {};
-                console.log('📥 Loaded Roster Data from star1-schedule:', allSchedules);
-                console.log('Total dates in roster:', Object.keys(allSchedules).length);
+                debugLog('📥 Loaded Roster Data from star1-schedule:', allSchedules);
+                debugLog('Total dates in roster:', Object.keys(allSchedules).length);
                 if (Object.keys(allSchedules).length === 0) {
-                    console.log('ℹ️ Roster is empty - ready for data import or fresh start');
+                    debugLog('ℹ️ Roster is empty - ready for data import or fresh start');
                 }
                 if (currentStaff) { renderStaffsShifts(); renderRosterCalendar(); }
             }, (error) => console.error('Error loading roster:', error));
@@ -567,7 +572,7 @@
                 });
             }
 
-            console.log(`🔍 ${currentStaff}'s shifts found:`, staffShifts.length);
+            debugLog(`🔍 ${currentStaff}'s shifts found:`, staffShifts.length);
             
             if (staffShifts.length === 0) {
                 shiftsList.innerHTML = '<p style="color: #999;">No shifts assigned in the roster.<br><small style="display:block; margin-top: 10px; color: #666;">✓ Roster loaded successfully<br>✗ But you have no shifts assigned yet</small></p>';
@@ -579,7 +584,7 @@
                 const d = new Date(shift.date + 'T00:00:00');
                 const card = document.createElement('div');
                 card.className = 'shift-card';
-                card.innerHTML = `<h3>${d.toDateString()}</h3><p><strong>Shift:</strong> ${shift.shiftLabel}</p><p><strong>Date:</strong> ${shift.date}</p><button onclick="selectTradeShiftInCalendar('${shift.date}', '${shift.shiftId}', '${shift.shiftLabel}')">Request Trade</button>`;
+                card.innerHTML = `<h3>${d.toDateString()}</h3><p><strong>Shift:</strong> ${esc(shift.shiftLabel)}</p><p><strong>Date:</strong> ${esc(shift.date)}</p><button onclick="selectTradeShiftInCalendar(${jsArg(shift.date)}, ${jsArg(shift.shiftId)}, ${jsArg(shift.shiftLabel)})">Request Trade</button>`;
                 shiftsList.appendChild(card);
             });
         }
@@ -663,7 +668,7 @@
                             if (staffName === currentStaff) shiftDiv.classList.add('my-shift');
                             if (selectedTradeShift && dateStr === selectedTradeShift.date && shift.key === selectedTradeShift.shiftId) shiftDiv.classList.add('selected');
 
-                            shiftDiv.innerHTML = `<strong>${shift.icon}</strong> ${staffName}`;
+                            shiftDiv.innerHTML = `<strong>${shift.icon}</strong> ${esc(staffName)}`;
                             
                             shiftDiv.addEventListener('click', () => {
                                 if (selectedTradeShift && dateStr === selectedTradeShift.date && shift.key === selectedTradeShift.shiftId) {
@@ -834,7 +839,7 @@
                         const d = new Date(req.date + 'T00:00:00');
                         const card = document.createElement('div');
                         card.className = 'request-card pending';
-                        card.innerHTML = `<p><strong>${req.staffName}</strong> requesting <strong>${req.shiftLabel}</strong> on <strong>${d.toDateString()}</strong></p><p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${req.reason}</p><button onclick="approveExtraShift('${req.id}', '${req.date}', '${req.shiftId}', '${req.staffName}')" class="btn-approve">✓ Approve</button><button onclick="denyExtraShift('${req.id}')" class="btn-deny">✗ Deny</button>`;
+                        card.innerHTML = `<p><strong>${esc(req.staffName)}</strong> requesting <strong>${esc(req.shiftLabel)}</strong> on <strong>${d.toDateString()}</strong></p><p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${esc(req.reason)}</p><button onclick="approveExtraShift(${jsArg(req.id)}, ${jsArg(req.date)}, ${jsArg(req.shiftId)}, ${jsArg(req.staffName)})" class="btn-approve">✓ Approve</button><button onclick="denyExtraShift(${jsArg(req.id)})" class="btn-deny">✗ Deny</button>`;
                         inboxList.appendChild(card);
                     });
                 }
@@ -850,7 +855,7 @@
                     const d2 = new Date(trade.toDate + 'T00:00:00');
                     const card = document.createElement('div');
                     card.className = 'request-card pending';
-                    card.innerHTML = `<p><strong>You requested:</strong> ${trade.toStaff}'s ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p><p><strong>You offered:</strong> Your ${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()})</p><p style="color: #666; font-size: 12px;">Waiting for ${trade.toStaff}'s response...</p>`;
+                    card.innerHTML = `<p><strong>You requested:</strong> ${esc(trade.toStaff)}'s ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p><p><strong>You offered:</strong> Your ${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()})</p><p style="color: #666; font-size: 12px;">Waiting for ${esc(trade.toStaff)}'s response...</p>`;
                     inboxList.appendChild(card);
                 });
             }
@@ -866,7 +871,7 @@
                     const card = document.createElement('div');
                     card.className = 'request-card';
                     card.style.borderLeftColor = '#0d6efd';
-                    card.innerHTML = `<p><strong>${trade.fromStaff} is requesting:</strong> Your ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p><p><strong>They offer:</strong> Their ${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()})</p><p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${trade.reason}</p><button onclick="acceptTrade('${trade.id}')" class="btn-approve">✓ Accept</button><button onclick="declineTrade('${trade.id}')" class="btn-deny">✗ Decline</button>`;
+                    card.innerHTML = `<p><strong>${esc(trade.fromStaff)} is requesting:</strong> Your ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p><p><strong>They offer:</strong> Their ${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()})</p><p style="color: #666; font-size: 12px;"><strong>Reason:</strong> ${esc(trade.reason)}</p><button onclick="acceptTrade(${jsArg(trade.id)})" class="btn-approve">✓ Accept</button><button onclick="declineTrade(${jsArg(trade.id)})" class="btn-deny">✗ Decline</button>`;
                     inboxList.appendChild(card);
                 });
             }
@@ -885,7 +890,7 @@
                     const card = document.createElement('div');
                     card.className = 'request-card accepted';
                     card.style.borderLeftColor = statusColor;
-                    card.innerHTML = `<p><strong>${trade.fromStaff} ↔ ${trade.toStaff}</strong></p><p>${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()}) ↔ ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p><p style="color: #666; font-size: 12px;"><strong>Status:</strong> ${statusText}</p>${ADMINS.includes(currentStaff) && trade.status === 'both_accepted' ? `<button onclick="approveTrade('${trade.id}')" style="background-color: #007bff; margin-top: 10px;">🔒 Admin Approve (Apply Changes)</button>` : ''}`;
+                    card.innerHTML = `<p><strong>${esc(trade.fromStaff)} ↔ ${esc(trade.toStaff)}</strong></p><p>${getShiftLabelFromId(trade.fromShift)} (${d1.toDateString()}) ↔ ${getShiftLabelFromId(trade.toShift)} (${d2.toDateString()})</p><p style="color: #666; font-size: 12px;"><strong>Status:</strong> ${statusText}</p>${ADMINS.includes(currentStaff) && trade.status === 'both_accepted' ? `<button onclick="approveTrade(${jsArg(trade.id)})" style="background-color: #007bff; margin-top: 10px;">🔒 Admin Approve (Apply Changes)</button>` : ''}`;
                     inboxList.appendChild(card);
                 });
             }
