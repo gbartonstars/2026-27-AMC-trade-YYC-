@@ -16,7 +16,7 @@ const PARAMEDICS = [
 
 const NURSES = [
   'Graham Newton', 'Stuart Grant', 'Kellie Ann Vogelaar', 'Michelle Sexsmith',
-  'Carolyn Hogan', 'Kris Austin', 'Flo Butler', 'Jodi Scott', 'Janice Kirkham'
+  'Carolyn Hogan', 'Kris Austin', 'Flo Butler'
 ];
 
 // Admin users who can approve trades
@@ -41,8 +41,6 @@ const LOGIN_CODES = {
   'Carolyn Hogan': 'H642',
   'Kris Austin': 'A753',
   'Flo Butler': 'B864',
-  'Jodi Scott': 'J975',
-  'Janice Kirkham': 'K108',
   'Bob Odney': 'O555'
 };
 
